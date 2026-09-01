@@ -766,7 +766,6 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
         for (const s of sentences) {
           if (turnComplete) break;
           fullText += (fullText ? " " : "") + s;
-          enqueueSpeech(s);
           if (s.endsWith("?")) turnComplete = true;
         }
         setLiveAssistantText(fullText);
@@ -782,7 +781,6 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
       }
       if (!turnComplete && buffer.trim() && !controller.signal.aborted) {
         fullText += (fullText ? " " : "") + buffer.trim();
-        enqueueSpeech(buffer.trim());
       }
       if (!fullText.trim() && !controller.signal.aborted) {
         // The request succeeded but the model produced zero visible content (e.g.
@@ -793,7 +791,6 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
           shouldRetry = true;
         } else {
           fullText = T.fallbackReply;
-          enqueueSpeech(fullText);
         }
       }
     } catch (err) {
@@ -807,7 +804,6 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
         setError(T.networkError);
         if (!fullText) {
           fullText = T.fallbackReply;
-          enqueueSpeech(fullText);
         }
       }
     } finally {
@@ -818,6 +814,12 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
         }, 900);
         return;
       }
+      // Single TTS request for the whole (possibly truncated) turn, spoken
+      // here rather than piecemeal as each sentence streamed in. One request
+      // means one generation, which is what keeps the voice sounding like the
+      // same person for the whole line instead of drifting sentence to
+      // sentence.
+      if (fullText.trim()) enqueueSpeech(fullText);
       streamDoneRef.current = true;
       questionsAskedRef.current += 1;
       const finalMessages = [...history, { role: "assistant" as const, content: fullText }];
