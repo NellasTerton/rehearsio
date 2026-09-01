@@ -141,11 +141,11 @@ const COPY: Record<Lang, Copy> = {
     },
     faq: {
       eyebrow: "Частые вопросы",
-      h2: "Да, бесплатно. Нет, вас никто не слушает.",
+      h2: "Бесплатно, чтобы начать. Никто вас не слушает.",
       q1: "Это точно бесплатно?",
-      a1: "Да. Без карты, без подписки, без регистрации. Открыли, вставили вакансию, начали.",
+      a1: "Одно собеседование — да, без карты и регистрации. С бесплатным аккаунтом — по одному каждый день. Платная подписка (1,99 € / мес) снимает лимит и добавляет живой голос вместо браузерного.",
       q2: "Мои данные видны кому-то?",
-      a2: "Аккаунтов и базы данных нет, поэтому сохранять вас просто некуда. Вакансия, ответы и разбор живут во вкладке браузера. Закрыли вкладку, и они исчезли. При этом текст обрабатывает языковая модель, которая ведёт разговор, как в любом AI-сервисе. Поэтому не вставляйте то, что не должно попасть к третьей стороне.",
+      a2: "Если вы без аккаунта, сохранять вас просто некуда: вакансия, ответы и разбор живут во вкладке браузера и исчезают с ней. С аккаунтом мы храним только почту и статус подписки — ни вакансии, ни ответы, ни разбор в базу не попадают. Текст интервью в обоих случаях обрабатывает языковая модель, которая ведёт разговор, как в любом AI-сервисе — не вставляйте то, что не должно попасть к третьей стороне.",
       q3: "А если я не знаю, что отвечать?",
       a3: "Так и скажите. Собеседник переспросит и зайдёт с другой стороны, а в разборе вы увидите, какого ответа здесь ждали.",
       q4: "Нужен микрофон?",
@@ -235,11 +235,11 @@ const COPY: Record<Lang, Copy> = {
     },
     faq: {
       eyebrow: "FAQ",
-      h2: "Yes, free. No, nobody's listening.",
+      h2: "Free to start. Nobody's listening.",
       q1: "Is this really free?",
-      a1: "Yes. No card, no subscription, no sign-up. Open it, paste a job post, start.",
+      a1: "One interview, yes — no card, no sign-up. With a free account, one every day. A paid subscription (€1.99/mo) removes the limit and swaps in a real voice instead of the browser one.",
       q2: "Can anyone see my data?",
-      a2: "There are no accounts and no database, so there is nowhere to store you. The job post, your answers and the feedback live in your browser tab. Close the tab and they are gone. The text is processed by the language model running the conversation, as with any AI service. So don't paste anything that shouldn't reach a third party.",
+      a2: "Without an account there's nowhere to store you: the job post, your answers and the feedback live in your browser tab and vanish with it. With an account we only store your email and subscription status — the job post, answers and feedback never reach our database either way. The interview text itself is processed by the language model running the conversation, as with any AI service — don't paste anything that shouldn't reach a third party.",
       q3: "What if I don't know what to say?",
       a3: "Say exactly that. It will rephrase and come at the topic from another angle, and the feedback will show you what the answer should have been.",
       q4: "Do I need a microphone?",
@@ -612,9 +612,12 @@ export default function LandingScreen({ onStart }: Props) {
       <header className={styles.navWrap}>
         <div className={styles.shell}>
           <nav className={styles.nav}>
-            <span className={styles.wordmark}>
-              <span className={styles.dot} />
-              Rehearsio
+            <span className={styles.wordmarkGroup}>
+              <span className={styles.wordmark}>
+                <span className={styles.dot} />
+                Rehearsio
+              </span>
+              <span className={styles.navTagline}>Your interview. Rehearsed.</span>
             </span>
             {/* No "call" link any more — the call preview lives in the hero
                 rather than in a section of its own. */}

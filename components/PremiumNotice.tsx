@@ -6,8 +6,6 @@ import type { Lang } from "@/lib/types";
 
 import styles from "./PremiumNotice.module.css";
 
-const DISMISS_KEY = "rehearsio_premium_notice_dismissed";
-
 // Kept in sync by hand with the Stripe Price this app checks out against
 // (product "VacancyBot", 1.99 EUR / month, live mode). If the price changes in
 // Stripe, change it here too — showing one number and charging another is the
@@ -52,17 +50,11 @@ export default function PremiumNotice({
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Shown once per browser. An interstitial that returns on every visit is
-    // the thing everyone hates about these; declining once has to stick.
-    let dismissed = false;
-    try {
-      dismissed = localStorage.getItem(DISMISS_KEY) === "1";
-    } catch {
-      // Private mode or blocked storage: show it, but it simply won't persist.
-    }
-    if (dismissed) return;
-    // A short delay so it lands after the page has painted rather than
-    // slamming shut over a blank screen.
+    // Shown on every visit, deliberately — the parent only mounts this
+    // component while the visitor has no subscription (signed out, free
+    // tier, or lapsed), so "every visit" means "every visit while there's
+    // still something to sell." A short delay so it lands after the page has
+    // painted rather than slamming shut over a blank screen.
     const timer = setTimeout(() => setVisible(true), 1400);
     return () => clearTimeout(timer);
   }, []);
@@ -78,12 +70,10 @@ export default function PremiumNotice({
   }, [visible]);
 
   function dismiss() {
+    // Only hides it for the rest of this page view — no persistence. It
+    // comes back on the next full visit as long as the parent still thinks
+    // there's a subscription to sell.
     setVisible(false);
-    try {
-      localStorage.setItem(DISMISS_KEY, "1");
-    } catch {
-      // ignore
-    }
   }
 
   if (!visible) return null;

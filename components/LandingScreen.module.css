@@ -125,6 +125,12 @@
   border-radius: var(--radius-nav);
   padding: 8px 8px 8px 24px;
 }
+.wordmarkGroup {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
 .wordmark {
   display: inline-flex;
   align-items: baseline;
@@ -133,6 +139,16 @@
   font-weight: 600;
   letter-spacing: -0.4px;
   white-space: nowrap;
+  flex: none;
+}
+.navTagline {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--color-slate);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .wordmark .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-iris-soft); align-self: center; flex: none; }
 
@@ -448,6 +464,10 @@
 
 /* Links go before they wrap: below this the labels no longer fit on one line
    inside the pill and push it to double height. */
+@media (max-width: 1040px) {
+  .navTagline { display: none; }
+}
+
 @media (max-width: 880px) {
   .navLinks { display: none; }
   .nav { padding-inline-start: 18px; }

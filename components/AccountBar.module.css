@@ -60,13 +60,12 @@
   color: #c1453b;
 }
 
-/* Sign-in reads as a quiet utility, not a call to action: white fill on the
-   cream header separates it from the page without competing with the one
-   accent CTA the design system allows on screen. */
+/* Accent fill, by request — this is meant to stand out at a glance rather
+   than read as a quiet utility link. */
 .signInBtn {
-  background: #fff;
-  border: 1px solid var(--color-hairline, #e0dbd4);
-  color: var(--color-ink-warm, #2b2724);
+  background: var(--color-iris, #5b5bd6);
+  border: 1px solid var(--color-iris, #5b5bd6);
+  color: #fff;
   border-radius: 999px;
   padding: 7px 18px;
   font: inherit;
@@ -76,5 +75,6 @@
 }
 
 .signInBtn:hover {
-  border-color: var(--color-ink-soft, #6b6560);
+  background: #4a4ac2;
+  border-color: #4a4ac2;
 }
