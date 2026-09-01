@@ -8,17 +8,39 @@ import type { Lang } from "./types";
 
 // Russian: cedar only. The other voices were noticeably worse on Russian in
 // side-by-side testing, so there's nothing to rotate between.
-const RU_VOICE = "cedar";
+const RU_VOICES = ["cedar"] as const;
 
-// English: any of these, picked per call for variety. All are female voices,
-// matching the female persona the English prompt commits to.
+// English: any of these, picked once per call for variety across different
+// interviews. All are female voices, matching the female persona the English
+// prompt commits to.
 const EN_FEMALE_VOICES = ["nova", "shimmer", "coral", "sage"] as const;
 
 export type TtsVoice = string;
 
+function voicesFor(lang: Lang): readonly string[] {
+  return lang === "ru" ? RU_VOICES : EN_FEMALE_VOICES;
+}
+
+/**
+ * Picks a voice for a NEW call. Call this once per interview and keep the
+ * result for every /api/tts request in that call — the interviewer must
+ * sound like the same person for the whole conversation. Calling this per
+ * request (instead of once per call) is the exact bug that made the voice
+ * randomly change mid-interview; if you're tempted to call it from the TTS
+ * route itself, don't — see isValidVoice below instead.
+ */
 export function pickVoice(lang: Lang): TtsVoice {
-  if (lang === "ru") return RU_VOICE;
-  return EN_FEMALE_VOICES[Math.floor(Math.random() * EN_FEMALE_VOICES.length)];
+  const voices = voicesFor(lang);
+  return voices[Math.floor(Math.random() * voices.length)];
+}
+
+/**
+ * Server-side check that a client-supplied voice is actually one of the
+ * persona-appropriate options for this language, so a request can't ask for
+ * (say) a male voice on an English call and break the name/voice match.
+ */
+export function isValidVoice(lang: Lang, voice: unknown): voice is TtsVoice {
+  return typeof voice === "string" && voicesFor(lang).includes(voice as TtsVoice);
 }
 
 export const TTS_MODEL = "gpt-4o-mini-tts";

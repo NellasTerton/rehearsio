@@ -8,6 +8,7 @@ import {
   pickClosingLine,
   type InterviewPhase,
 } from "@/lib/prompts";
+import { pickVoice } from "@/lib/tts";
 import type { CallState, ChatMessage, Lang } from "@/lib/types";
 
 interface Props {
@@ -140,6 +141,11 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
   // call, so a free user pays one wasted round-trip, not one per sentence.
   const premiumVoiceRef = useRef(true);
   const premiumAudioRef = useRef<HTMLAudioElement | null>(null);
+  // Picked ONCE per call and reused for every /api/tts request in it — the
+  // interviewer must sound like the same person all the way through.
+  // Re-picking per request (the original bug) made the voice randomly change
+  // mid-conversation on English calls, where there's more than one option.
+  const voiceRef = useRef<string>(pickVoice(lang));
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Interview state we track in code rather than trusting the model to count its
@@ -358,6 +364,140 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
   }
 
   /**
+   * Full-buffer fallback: wait for the whole reply's audio to arrive, then
+   * play it. This is what runs when the browser can't stream mp3 into an
+   * <audio> element (see canStreamAudio below) — correct everywhere, just
+   * slower to start than the streaming path.
+   */
+  async function playBufferedAudio(
+    res: Response,
+    myToken: number,
+    advance: () => void
+  ) {
+    const blob = await res.blob();
+    if (speakTokenRef.current !== myToken || !callActiveRef.current) return;
+
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    premiumAudioRef.current = audio;
+
+    const finish = () => {
+      URL.revokeObjectURL(url);
+      if (premiumAudioRef.current === audio) premiumAudioRef.current = null;
+      advance();
+    };
+    audio.onended = finish;
+    audio.onerror = finish;
+    await audio.play();
+  }
+
+  /**
+   * Streams the reply's audio into an <audio> element via MediaSource as it
+   * arrives, so playback starts after the first chunk instead of after the
+   * whole line has finished generating and downloading. For a 15-20 second
+   * reply that's the difference between the interviewer starting to talk
+   * right away and a multi-second silent pause after the text already showed
+   * on screen — playBufferedAudio's await res.blob() waits for the entire
+   * response body before any audio.play() happens, no matter that the server
+   * itself streams the OpenAI response straight through.
+   */
+  function playStreamedAudio(res: Response, myToken: number, advance: () => void) {
+    const mediaSource = new MediaSource();
+    const url = URL.createObjectURL(mediaSource);
+    const audio = new Audio(url);
+    premiumAudioRef.current = audio;
+
+    const finish = () => {
+      URL.revokeObjectURL(url);
+      if (premiumAudioRef.current === audio) premiumAudioRef.current = null;
+      advance();
+    };
+    audio.onended = finish;
+    audio.onerror = finish;
+
+    mediaSource.addEventListener(
+      "sourceopen",
+      () => {
+        // The call may have moved on (ended, or barged in on) while the
+        // response was still arriving — don't attach a buffer to a
+        // MediaSource nobody is going to play.
+        if (speakTokenRef.current !== myToken || !callActiveRef.current) {
+          finish();
+          return;
+        }
+
+        let sourceBuffer: SourceBuffer;
+        try {
+          sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
+        } catch {
+          finish();
+          return;
+        }
+
+        const reader = res.body!.getReader();
+        let startedPlayback = false;
+
+        const pump = ({
+          done,
+          value,
+        }: ReadableStreamReadResult<Uint8Array>) => {
+          if (speakTokenRef.current !== myToken || !callActiveRef.current) {
+            reader.cancel().catch(() => {});
+            return;
+          }
+          if (done) {
+            if (mediaSource.readyState === "open") {
+              try {
+                mediaSource.endOfStream();
+              } catch {
+                // A superseded/aborted stream can land here mid-teardown —
+                // the audio element is going away regardless, ignore it.
+              }
+            }
+            return;
+          }
+          sourceBuffer.addEventListener(
+            "updateend",
+            () => {
+              if (!startedPlayback) {
+                startedPlayback = true;
+                // The call already has a user gesture (the candidate started
+                // it), so a rejection here is a real failure, not an autoplay
+                // policy block — move on rather than stall the interview.
+                audio.play().catch(finish);
+              }
+              reader.read().then(pump).catch(finish);
+            },
+            { once: true }
+          );
+          try {
+            // .slice() rather than appending `value` directly: the reader's
+            // chunks are typed as Uint8Array<ArrayBufferLike> (could be a
+            // SharedArrayBuffer under some bundler/runtime combos), but
+            // appendBuffer wants a concrete ArrayBuffer-backed view. slice()
+            // always returns one, and the copy is cheap next to the network
+            // and audio-generation cost this is layered under.
+            sourceBuffer.appendBuffer(value.slice());
+          } catch {
+            finish();
+          }
+        };
+
+        reader.read().then(pump).catch(finish);
+      },
+      { once: true }
+    );
+  }
+
+  function canStreamAudio(res: Response): boolean {
+    return (
+      !!res.body &&
+      typeof MediaSource !== "undefined" &&
+      MediaSource.isTypeSupported("audio/mpeg")
+    );
+  }
+
+  /**
    * Paid realistic voice. Any failure — not entitled, network, provider
    * error — falls back to the free browser voice rather than leaving the
    * candidate in silence, because a call with no audio is worse than a call
@@ -368,7 +508,7 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
       const res = await fetch("/api/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, lang }),
+        body: JSON.stringify({ text, lang, voice: voiceRef.current }),
       });
 
       if (!res.ok) {
@@ -378,23 +518,15 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
         return;
       }
 
-      const blob = await res.blob();
-      // The call may have been ended or barged in on while the audio was
-      // being generated — don't start playing something already superseded.
+      // The call may have been ended or barged in on while the request was
+      // in flight — don't start playing something already superseded.
       if (speakTokenRef.current !== myToken || !callActiveRef.current) return;
 
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      premiumAudioRef.current = audio;
-
-      const finish = () => {
-        URL.revokeObjectURL(url);
-        if (premiumAudioRef.current === audio) premiumAudioRef.current = null;
-        advance();
-      };
-      audio.onended = finish;
-      audio.onerror = finish;
-      await audio.play();
+      if (canStreamAudio(res)) {
+        playStreamedAudio(res, myToken, advance);
+      } else {
+        await playBufferedAudio(res, myToken, advance);
+      }
     } catch {
       premiumVoiceRef.current = false;
       if (speakTokenRef.current !== myToken) return;

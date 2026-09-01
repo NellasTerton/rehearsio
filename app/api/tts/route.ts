@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { checkChatRateLimit, getClientIp } from "@/lib/rate-limit";
 import { hasActiveSubscription } from "@/lib/subscription";
-import { TTS_INSTRUCTIONS, TTS_MODEL, pickVoice } from "@/lib/tts";
+import { TTS_INSTRUCTIONS, TTS_MODEL, isValidVoice, pickVoice } from "@/lib/tts";
 import type { Lang } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     return new Response("Subscription required", { status: 402 });
   }
 
-  let body: { text?: string; lang?: Lang };
+  let body: { text?: string; lang?: Lang; voice?: string };
   try {
     body = await req.json();
   } catch {
@@ -64,6 +64,13 @@ export async function POST(req: Request) {
   }
 
   const lang: Lang = body.lang === "en" ? "en" : "ru";
+  // The client picks one voice at call start and reuses it for every line so
+  // the interviewer sounds like the same person all call — picking fresh
+  // here on every request was the bug that made the voice change mid-call.
+  // Still validated server-side (not just trusted) so a tampered request
+  // can't ask for a voice that doesn't match the committed persona for this
+  // language.
+  const voice = isValidVoice(lang, body.voice) ? body.voice : pickVoice(lang);
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return new Response("OPENAI_API_KEY is not set on the server", { status: 500 });
@@ -78,7 +85,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model: TTS_MODEL,
-        voice: pickVoice(lang),
+        voice,
         input: text,
         instructions: TTS_INSTRUCTIONS[lang],
         // mp3 rather than wav: roughly a tenth the bytes over the wire for
