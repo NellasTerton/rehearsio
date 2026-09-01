@@ -1,0 +1,17 @@
+node_modules
+.next
+out
+.env*.local
+npm-debug.log*
+*.tsbuildinfo
+next-env.d.ts
+
+# Secrets that must never leave this machine.
+# API.txt holds a live Groq key in plain text; .env.local.bak is a copy of
+# the env file. Neither was covered by the .env*.local rule above.
+API.txt
+.env.local.bak
+.env
+
+# Vercel project link
+.vercel

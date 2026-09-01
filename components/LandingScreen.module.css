@@ -1,0 +1,482 @@
+/* Design tokens (--color-*, --text-*, --radius-*, --gap-*) live in
+   app/globals.css :root — Next.js's CSS Modules loader rejects a bare
+   :global(:root) selector in a module file. */
+
+/* Root wrapper carries what used to be `body { ... }` in the standalone
+   prototype — the real body element is shared with the call screen, so
+   landing-specific background/color/font live here instead, scoped to this
+   div, and never touch body.
+
+   The spacing tokens are re-declared here rather than changed globally: this
+   page is the only place that needs a tighter rhythm, and the call/summary
+   screens read the global values. */
+.page {
+  --section-gap: 68px;
+  --gap-xl: 40px;
+  --page-gutter: 24px;
+
+  min-height: 100vh;
+  background: var(--color-cream-paper);
+  color: var(--color-ink-warm);
+  font-family: var(--font-poppins);
+  font-size: var(--text-body);
+  font-weight: 400;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+.page * { box-sizing: border-box; }
+.page h1, .page h2, .page h3, .page h4, .page p { margin: 0; }
+.page ul, .page ol { margin: 0; padding: 0; list-style: none; }
+.page a { color: inherit; text-decoration: none; }
+.page :focus-visible { outline: 2px solid var(--color-iris-accent); outline-offset: 3px; }
+
+/* ============================================================
+   PRIMITIVES
+   ============================================================ */
+.shell {
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
+}
+
+.eyebrow {
+  font-size: var(--text-caption);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-slate);
+}
+
+.hDisplay {
+  /* Smaller ceiling than the 64px token: the hero now shares its row with the
+     live call preview, so the headline has to hold a column rather than a full
+     page. Still well clear of the 40px floor the design system sets. */
+  font-size: clamp(40px, 4.4vw, 54px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -1.4px;
+  text-wrap: balance;
+}
+
+.hSection {
+  font-size: clamp(26px, 2.7vw, 34px);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.6px;
+  text-wrap: balance;
+}
+
+.hCard { font-size: var(--text-body); font-weight: 600; line-height: 1.35; letter-spacing: -0.2px; }
+.accentWord { color: var(--color-iris-accent); }
+.lede { font-size: var(--text-subheading); line-height: 1.35; letter-spacing: -0.2px; color: var(--color-slate); }
+.muted { color: var(--color-slate); }
+.bodySm { font-size: var(--text-body-sm); line-height: 1.5; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  line-height: 1;
+  padding: 15px 28px;
+  border-radius: var(--radius-buttons);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease, transform .18s ease;
+}
+@media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+
+.btnAccent { background: var(--color-iris-accent); color: var(--color-pure-white); border-color: var(--color-iris-accent); }
+.btnAccent:hover { background: #423ff0; border-color: #423ff0; }
+.btnAccent:active { transform: translateY(1px); }
+
+.btnGhost { background: transparent; color: var(--color-ink-warm); border-color: var(--color-ink-warm); }
+.btnGhost:hover { background: var(--color-ink-warm); color: var(--color-cream-paper); }
+.btnGhost:active { transform: translateY(1px); }
+
+.btnSm { font-size: var(--text-body-sm); padding: 10px 20px; }
+
+.card { background: var(--color-pure-white); border-radius: var(--radius-cards); padding: var(--card-padding); }
+
+/* ============================================================
+   NAV
+   ============================================================ */
+.navWrap {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  padding-top: 14px;
+  padding-bottom: 10px;
+  /* Cream band above the pill: without it, page content slides through the gap
+     between the viewport top and the floating nav and gets sliced in half. */
+  background: var(--color-cream-paper);
+}
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-md);
+  background: var(--color-pure-white);
+  border-radius: var(--radius-nav);
+  padding: 8px 8px 8px 24px;
+}
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--gap-xs);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  white-space: nowrap;
+}
+.wordmark .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-iris-soft); align-self: center; flex: none; }
+
+.navLinks { display: flex; gap: 24px; margin-inline-start: auto; }
+.navLinks a {
+  font-size: var(--text-body-sm);
+  font-weight: 500;
+  padding-block: 4px;
+  border-bottom: 1.5px solid transparent;
+  transition: border-color .18s ease;
+}
+.navLinks a:hover { border-bottom-color: var(--color-ink-warm); }
+
+.lang { display: flex; align-items: center; gap: 6px; font-size: var(--text-body-sm); font-weight: 500; }
+.lang button {
+  background: none; border: 0; cursor: pointer; padding: 4px 2px;
+  font-family: inherit; font-size: inherit; font-weight: 500;
+  color: var(--color-slate);
+}
+.lang button[aria-pressed="true"] { color: var(--color-ink-warm); }
+.lang button:hover { color: var(--color-ink-warm); }
+.lang .sep { color: var(--color-hairline); }
+
+/* ============================================================
+   HERO — copy on the left, the live call preview on the right.
+   Putting the product itself above the fold does two jobs at once: it kills
+   the centred-column-of-stacked-blocks look, and it removes what used to be a
+   whole separate 887px section further down the page.
+   ============================================================ */
+.hero {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: var(--gap-xl);
+  align-items: center;
+  padding-block: 44px 56px;
+}
+
+.heroCopy { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+
+.badgeRow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.freeBadge {
+  display: inline-block;
+  background: var(--color-sandstone);
+  border-radius: var(--radius-buttons);
+  padding: 7px 16px;
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  letter-spacing: -0.1px;
+}
+
+.hero .lede { max-width: 30ch; }
+
+.paste { width: 100%; display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+.pasteField {
+  width: 100%;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-inputs);
+  padding: 14px 20px;
+  display: flex;
+  transition: border-color .18s ease, border-radius .2s ease;
+}
+.pasteField:hover { border-color: var(--color-slate); }
+/* Outline rather than a thicker border so focus never shifts layout, and not a
+   shadow — DESIGN.md rules those out. */
+.pasteField:focus-within,
+.pasteField:focus-within:hover {
+  border-color: var(--color-iris-accent);
+  outline: 1.5px solid var(--color-iris-accent);
+  outline-offset: -1px;
+}
+.pasteField.open { border-radius: var(--radius-cards); }
+.pasteField textarea {
+  flex: 1;
+  border: 0; background: transparent; resize: none;
+  font-family: inherit; font-size: var(--text-body-sm); line-height: 1.5;
+  color: var(--color-ink-warm);
+  max-height: 160px;
+  overflow-y: hidden;
+  outline: none;
+}
+.pasteField.full textarea { overflow-y: auto; }
+.pasteField textarea::placeholder { color: var(--color-slate); }
+
+@keyframes flashHighlight {
+  0%, 100% { border-color: var(--color-hairline); }
+  50% { border-color: var(--color-iris-accent); }
+}
+.pasteField.flash { animation: flashHighlight .5s ease-in-out 2; }
+@media (prefers-reduced-motion: reduce) {
+  .pasteField.flash { animation: none; border-color: var(--color-iris-accent); }
+}
+
+.pasteActions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.heroNote { font-size: var(--text-body-sm); color: var(--color-slate); max-width: 42ch; }
+
+/* ---------- Live call preview inside the hero ---------- */
+.heroDemo { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.demoLabel { font-size: var(--text-caption); letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-slate); }
+
+.callMock {
+  background: var(--color-pure-white);
+  border-radius: var(--radius-cards);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.callTop { display: flex; align-items: center; gap: 14px; }
+
+.orbHolder { position: relative; display: grid; place-items: center; flex: none; }
+.orb {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--color-cream-paper);
+  border: 1.5px solid var(--color-hairline);
+  display: grid; place-items: center;
+  position: relative; z-index: 1;
+  transition: border-color .3s ease;
+}
+.orbRing { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--color-iris-soft); opacity: 0; }
+.callMock[data-state="listening"] .orb { border-color: var(--color-iris-accent); }
+.callMock[data-state="speaking"] .orb { border-color: var(--color-iris-soft); }
+.callMock[data-state="listening"] .orbRing,
+.callMock[data-state="speaking"] .orbRing { animation: ripple 1.9s ease-out infinite; }
+.callMock[data-state="speaking"] .orbRing:nth-child(2) { animation-delay: .5s; }
+@keyframes ripple {
+  0%   { transform: scale(1);    opacity: .5; }
+  100% { transform: scale(1.45); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .orbRing { animation: none !important; opacity: 0; } }
+
+.wave { display: flex; align-items: center; gap: 3px; height: 26px; }
+.wave span { width: 3px; border-radius: 2px; background: var(--color-ink-warm); height: 6px; transition: height .25s ease; }
+.callMock[data-state="listening"] .wave span { animation: bounce 1.1s ease-in-out infinite; }
+.callMock[data-state="speaking"] .wave span { animation: bounce .7s ease-in-out infinite; }
+.wave span:nth-child(2) { animation-delay: .12s; }
+.wave span:nth-child(3) { animation-delay: .24s; }
+.wave span:nth-child(4) { animation-delay: .36s; }
+.wave span:nth-child(5) { animation-delay: .18s; }
+@keyframes bounce { 0%, 100% { height: 6px; } 50% { height: 22px; } }
+@media (prefers-reduced-motion: reduce) { .wave span { animation: none !important; } }
+
+.callMeta { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.callTimer { font-size: var(--text-body-sm); font-weight: 500; color: var(--color-slate); font-variant-numeric: tabular-nums; }
+.stateChip {
+  align-self: flex-start;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 5px 12px; border-radius: var(--radius-buttons);
+  background: var(--color-cream-paper); white-space: nowrap;
+}
+
+.transcriptLabel { font-size: var(--text-caption); letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-slate); }
+/* Reserves height for the longest question in the pool so swapping lines never
+   makes the card jump. */
+.transcript {
+  font-size: var(--text-body);
+  line-height: 1.45;
+  letter-spacing: -0.1px;
+  min-height: 4.4em;
+  margin-top: 4px;
+}
+.caret { display: inline-block; width: 2px; height: 1em; background: var(--color-iris-accent); vertical-align: -2px; margin-left: 2px; animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+
+.callInputRow { display: flex; gap: 10px; align-items: center; }
+.callInput {
+  flex: 1;
+  background: var(--color-cream-paper);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-inputs);
+  padding: 11px 16px;
+  font-size: 13px;
+  color: var(--color-slate);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.endCall {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--color-ink-warm); color: var(--color-cream-paper);
+  display: grid; place-items: center; flex: none; font-size: 13px;
+}
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+.section { padding-block: var(--section-gap); }
+
+/* A hairline instead of pure whitespace between blocks: it does the separating
+   work that 100px of nothing was doing before, in 1px. */
+.ruled { border-top: 1px solid var(--color-hairline); }
+
+.sectionHead { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+
+/* ---------- How it works: a dense three-up strip, columns divided by rules
+     rather than floated as three identical cards. ---------- */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); }
+.step { padding-inline: 28px; border-left: 1px solid var(--color-hairline); }
+.step:first-child { padding-inline-start: 0; border-left: 0; }
+.step:last-child { padding-inline-end: 0; }
+.stepNum {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 6px;
+  background: var(--color-ink-warm); color: var(--color-cream-paper);
+  font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+  margin-bottom: 10px;
+}
+.step h3 { margin-bottom: 5px; }
+.step p { color: var(--color-slate); font-size: var(--text-body-sm); line-height: 1.5; }
+
+/* ---------- Report ---------- */
+.splitReport { display: grid; grid-template-columns: 4fr 7fr; gap: var(--gap-xl); align-items: start; }
+.reportPoints { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.reportPoint { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; font-size: var(--text-body-sm); }
+.pointDot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-iris-soft); flex: none; }
+
+.reportCard { display: flex; flex-direction: column; gap: 16px; padding: 26px; }
+.reportHead {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: var(--gap-sm); flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+.scoreTotal { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; font-variant-numeric: tabular-nums; }
+
+.qRows { display: flex; flex-direction: column; gap: 9px; }
+.qRow { display: grid; grid-template-columns: 1fr auto; gap: var(--gap-sm); align-items: center; }
+.qRow p { font-size: 13px; line-height: 1.35; }
+.qMeter { display: flex; align-items: center; gap: var(--gap-xs); }
+.meterTrack { width: 64px; height: 5px; border-radius: 3px; background: var(--color-sandstone); overflow: hidden; }
+.meterFill { height: 100%; background: var(--color-ink-warm); border-radius: 3px; }
+.qScore { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 4ch; text-align: right; }
+
+.verdicts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.verdict { background: var(--color-cream-paper); border-radius: var(--radius-small); padding: 12px 14px; }
+.verdict h4 {
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--color-slate); margin-bottom: 5px;
+}
+.verdict p { font-size: 13px; line-height: 1.4; }
+
+/* ---------- FAQ: two columns, so six short questions stop occupying a screen
+     and a third of scrolling on their own. ---------- */
+.faqHead { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.faqList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-content: start;
+}
+.faqItem { background: var(--color-pure-white); border-radius: 24px; overflow: hidden; height: fit-content; }
+.faqQ {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; cursor: pointer;
+  font-size: var(--text-body); font-weight: 500; letter-spacing: -0.2px;
+  padding: 16px 20px;
+  list-style: none;
+}
+.faqQ::-webkit-details-marker { display: none; }
+.faqQ:hover { color: var(--color-iris-accent); }
+.faqSign { flex: none; width: 18px; height: 18px; position: relative; }
+.faqSign::before, .faqSign::after {
+  content: ""; position: absolute; background: currentColor; border-radius: 2px;
+  inset-inline-start: 50%; inset-block-start: 50%;
+}
+.faqSign::before { width: 12px; height: 1.5px; transform: translate(-50%, -50%); }
+.faqSign::after  { width: 1.5px; height: 12px; transform: translate(-50%, -50%); transition: transform .2s ease, opacity .2s ease; }
+.faqItem[open] .faqSign::after { transform: translate(-50%, -50%) rotate(90deg); opacity: 0; }
+.faqA { color: var(--color-slate); padding: 0 20px 18px; font-size: var(--text-body-sm); line-height: 1.5; }
+
+/* ============================================================
+   FOOTER — the closing CTA sits on one line with the wordmark lockup instead
+   of stacking centred blocks down another two-thirds of a screen.
+   ============================================================ */
+.footer { padding-block: var(--section-gap) 28px; }
+.footerCta {
+  display: grid;
+  grid-template-columns: 1.2fr auto;
+  gap: var(--gap-xl);
+  align-items: center;
+}
+.footerCta h2 { max-width: 16ch; }
+.footerRight { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+
+.footerBar {
+  margin-top: 44px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-hairline);
+  display: flex; flex-wrap: wrap; gap: var(--gap-md);
+  align-items: flex-end; justify-content: space-between;
+  font-size: var(--text-body-sm); color: var(--color-slate);
+}
+.footerLockup { display: flex; flex-direction: column; gap: 1px; }
+.footerLockup .wordmark { font-size: 20px; letter-spacing: -0.5px; color: var(--color-ink-warm); }
+/* The single editorial (Playfair) moment on the page. */
+.tagline { font-family: var(--font-editorial); font-style: italic; font-size: var(--text-body); color: var(--color-slate); }
+.footerBar nav { display: flex; gap: var(--gap-md); flex-wrap: wrap; }
+.footerBar a:hover { color: var(--color-ink-warm); }
+
+/* ============================================================
+   RESPONSIVE — 1280 / 768 / 360
+   ============================================================ */
+@media (max-width: 980px) {
+  .hero { grid-template-columns: 1fr; gap: 32px; padding-block: 32px 44px; }
+  .heroCopy { gap: 16px; }
+  .hero .lede { max-width: none; }
+  .splitReport { grid-template-columns: 1fr; gap: 28px; }
+  .footerCta { grid-template-columns: 1fr; gap: 24px; }
+  .footerCta h2 { max-width: 22ch; }
+}
+
+/* Links go before they wrap: below this the labels no longer fit on one line
+   inside the pill and push it to double height. */
+@media (max-width: 880px) {
+  .navLinks { display: none; }
+  .nav { padding-inline-start: 18px; }
+  .lang { margin-inline-start: auto; }
+}
+
+/* Three columns stop working before the nav does: below this the step copy is
+   squeezed into ~180px and breaks into four ragged lines, so switch to a
+   stacked list separated by rules instead of vertical ones. */
+@media (max-width: 860px) {
+  .steps { grid-template-columns: 1fr; gap: 20px; }
+  .step { padding-inline: 0; border-left: 0; padding-top: 18px; border-top: 1px solid var(--color-hairline); }
+  .step:first-child { padding-top: 0; border-top: 0; }
+  .step p { max-width: 60ch; }
+}
+
+@media (max-width: 760px) {
+  .page { --section-gap: 52px; }
+  .faqList { grid-template-columns: 1fr; }
+  .verdicts { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 420px) {
+  .page { --page-gutter: 16px; --section-gap: 44px; }
+  .btn { padding: 14px 22px; width: 100%; }
+  .pasteActions { width: 100%; }
+  .callMock { padding: 18px; }
+  .reportCard { padding: 18px; }
+  .footerRight { width: 100%; }
+  .footerBar { flex-direction: column; align-items: flex-start; }
+  .transcript { min-height: 5.6em; }
+}

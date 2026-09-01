@@ -1,0 +1,61 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-ink-soft, #6b6560);
+  text-decoration: none;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+}
+
+.link:hover:not(:disabled) {
+  color: var(--color-ink-warm, #2b2724);
+  border-bottom-color: currentColor;
+}
+
+.link:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* The one accent control in this bar. The landing page reserves the iris
+   accent for its single primary CTA, so this stays an outline button — it
+   must be findable without competing with "start the interview". */
+.cta {
+  background: none;
+  border: 1px solid var(--color-iris, #5b5bd6);
+  color: var(--color-iris, #5b5bd6);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cta:hover:not(:disabled) {
+  background: var(--color-iris, #5b5bd6);
+  color: #fff;
+}
+
+.cta:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.badge {
+  color: var(--color-iris, #5b5bd6);
+  white-space: nowrap;
+}
+
+.error {
+  color: #c1453b;
+}

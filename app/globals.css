@@ -1,0 +1,65 @@
+:root {
+  /* Rehearsio design tokens (DESIGN.md verbatim) — shared by every screen via
+     each component's CSS module. Kept global rather than inside a module
+     file because Next.js's CSS Modules loader rejects a bare :root selector
+     there. */
+  --color-iris-accent: #5551ff;
+  --color-iris-soft: #a95ef8;
+  --color-cream-paper: #f5f1e4;
+  --color-ink-warm: #2c2e2a;
+  --color-pure-white: #ffffff;
+  --color-sandstone: #e0dbce;
+  --color-slate: #80827f;
+  --color-hairline: #d5d5d4;
+
+  --font-poppins: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-editorial: "Playfair Display", "Iowan Old Style", Georgia, serif;
+
+  --text-caption: 12px;
+  --text-body-sm: 14px;
+  --text-body: 16px;
+  --text-subheading: 20px;
+  --text-heading-sm: 25px;
+  --text-heading: clamp(30px, 3.6vw, 40px);
+  --text-display: clamp(40px, 5.4vw, 64px);
+  --tracking-display: -1.98px;
+  --tracking-heading: -0.8px;
+
+  --radius-cards: 40px;
+  --radius-buttons: 50px;
+  --radius-nav: 50px;
+  --radius-inputs: 50px;
+  --radius-small: 10px;
+
+  --page-max-width: 1200px;
+  --section-gap: 100px;
+  --card-padding: 24px;
+  --gap-xs: 8px;
+  --gap-sm: 12px;
+  --gap-md: 20px;
+  --gap-lg: 32px;
+  --gap-xl: 48px;
+  --page-gutter: 24px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background: var(--color-cream-paper);
+  color: var(--color-ink-warm);
+  font-family: var(--font-poppins);
+}
+
+button {
+  font-family: inherit;
+}
+
+textarea,
+input {
+  font-family: inherit;
+}

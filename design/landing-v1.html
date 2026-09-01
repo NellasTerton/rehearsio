@@ -1,0 +1,1325 @@
+<title>Репетиция собеседования</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600&family=Playfair+Display:ital,wght@1,400;1,500&display=swap">
+
+<style>
+  /* ============================================================
+     TOKENS — DESIGN.md is the single source of truth.
+     The three --scale-* multipliers are the tuning knobs exposed
+     in the control panel; every spacing / type / radius token is
+     derived from them so the sliders move the whole system at once.
+     ============================================================ */
+  :root {
+    --scale-density: 1;
+    --scale-type: 1;
+    --scale-radius: 1;
+
+    /* Colors — verbatim from DESIGN.md */
+    --color-iris-accent: #5551ff;
+    --color-iris-soft: #a95ef8;
+    --color-cream-paper: #f5f1e4;
+    --color-ink-warm: #2c2e2a;
+    --color-pure-white: #ffffff;
+    --color-sandstone: #e0dbce;
+    --color-slate: #80827f;
+    --color-hairline: #d5d5d4;
+
+    --font-poppins: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-editorial: 'Playfair Display', 'Iowan Old Style', Georgia, serif;
+
+    /* Type scale */
+    --text-caption: calc(12px * var(--scale-type));
+    --text-body-sm: calc(14px * var(--scale-type));
+    --text-body: calc(16px * var(--scale-type));
+    --text-subheading: calc(20px * var(--scale-type));
+    --text-heading-sm: calc(25px * var(--scale-type));
+    --text-heading: calc(clamp(30px, 3.6vw, 40px) * var(--scale-type));
+    --text-display: calc(clamp(40px, 5.4vw, 64px) * var(--scale-type));
+    --tracking-display: -1.98px;
+    --tracking-heading: -0.8px;
+
+    /* Radii */
+    --radius-cards: calc(40px * var(--scale-radius));
+    --radius-buttons: calc(50px * var(--scale-radius));
+    --radius-nav: calc(50px * var(--scale-radius));
+    --radius-inputs: calc(50px * var(--scale-radius));
+    --radius-small: calc(10px * var(--scale-radius));
+
+    /* Spacing — base unit 4px, comfortable density */
+    --page-max-width: 1200px;
+    --section-gap: calc(100px * var(--scale-density));
+    --card-padding: calc(24px * var(--scale-density));
+    --gap-xs: calc(8px * var(--scale-density));
+    --gap-sm: calc(12px * var(--scale-density));
+    --gap-md: calc(20px * var(--scale-density));
+    --gap-lg: calc(32px * var(--scale-density));
+    --gap-xl: calc(48px * var(--scale-density));
+    --page-gutter: calc(24px * var(--scale-density));
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    /* Explicit ground: the artifact host paints its own background behind
+       the page, so a transparent body would borrow a dark theme's ground. */
+    background: var(--color-cream-paper);
+    color: var(--color-ink-warm);
+    font-family: var(--font-poppins);
+    font-size: var(--text-body);
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, p, figure, blockquote { margin: 0; }
+  ul, ol { margin: 0; padding: 0; list-style: none; }
+
+  a { color: inherit; text-decoration: none; }
+
+  :focus-visible {
+    outline: 2px solid var(--color-iris-accent);
+    outline-offset: 3px;
+  }
+
+  /* ============================================================
+     PRIMITIVES
+     ============================================================ */
+  .shell {
+    width: 100%;
+    max-width: var(--page-max-width);
+    margin-inline: auto;
+    padding-inline: var(--page-gutter);
+  }
+
+  .eyebrow {
+    font-size: var(--text-caption);
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-slate);
+  }
+
+  .h-display {
+    font-size: var(--text-display);
+    font-weight: 500;
+    line-height: 1.0;
+    letter-spacing: var(--tracking-display);
+    text-wrap: balance;
+  }
+
+  .h-section {
+    font-size: var(--text-heading);
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: var(--tracking-heading);
+    text-wrap: balance;
+  }
+
+  .h-card {
+    font-size: var(--text-subheading);
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.2px;
+  }
+
+  .accent-word { color: var(--color-iris-accent); }
+
+  .lede {
+    font-size: var(--text-subheading);
+    line-height: 1.4;
+    letter-spacing: -0.2px;
+    color: var(--color-slate);
+    max-width: 34ch;
+  }
+
+  .muted { color: var(--color-slate); }
+  .body-sm { font-size: var(--text-body-sm); line-height: 1.55; }
+
+  /* Buttons — Accent Pill is the ONLY filled-violet surface on screen */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-xs);
+    font-family: inherit;
+    font-size: var(--text-body);
+    font-weight: 600;
+    line-height: 1;
+    padding: calc(16px * var(--scale-density)) calc(32px * var(--scale-density));
+    border-radius: var(--radius-buttons);
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: background-color .18s ease, color .18s ease,
+                border-color .18s ease, transform .18s ease;
+  }
+  @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+
+  .btn-accent {
+    background: var(--color-iris-accent);
+    color: var(--color-pure-white);
+    border-color: var(--color-iris-accent);
+  }
+  .btn-accent:hover { background: #423ff0; border-color: #423ff0; }
+  .btn-accent:active { transform: translateY(1px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-ink-warm);
+    border-color: var(--color-ink-warm);
+  }
+  .btn-ghost:hover { background: var(--color-ink-warm); color: var(--color-cream-paper); }
+  .btn-ghost:active { transform: translateY(1px); }
+
+  .btn-sm {
+    font-size: var(--text-body-sm);
+    padding: calc(11px * var(--scale-density)) calc(22px * var(--scale-density));
+  }
+
+  /* Content card — white on cream, no shadow, no border */
+  .card {
+    background: var(--color-pure-white);
+    border-radius: var(--radius-cards);
+    padding: var(--card-padding);
+  }
+
+  /* ============================================================
+     NAV — floating white pill
+     ============================================================ */
+  /* Sticky at 0 with a cream band above the pill: without it, page content
+     slides through the gap between the viewport top and the floating nav and
+     gets sliced in half. The mask matches the canvas because every section
+     sits on cream — the sandstone block is an inset panel, not a full bleed. */
+  .nav-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    padding-top: calc(16px * var(--scale-density));
+    padding-bottom: calc(10px * var(--scale-density));
+    background: var(--color-cream-paper);
+  }
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-md);
+    background: var(--color-pure-white);
+    border-radius: var(--radius-nav);
+    padding: calc(10px * var(--scale-density)) calc(10px * var(--scale-density))
+             calc(10px * var(--scale-density)) calc(26px * var(--scale-density));
+  }
+  .wordmark {
+    font-size: var(--text-body);
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gap-xs);
+  }
+  .wordmark .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--color-iris-soft);
+    flex: none;
+  }
+  .nav-links {
+    display: flex;
+    gap: calc(26px * var(--scale-density));
+    margin-inline-start: auto;
+  }
+  .nav-links a {
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    color: var(--color-ink-warm);
+    padding-block: 4px;
+    border-bottom: 1.5px solid transparent;
+    transition: border-color .18s ease, color .18s ease;
+  }
+  .nav-links a:hover { border-bottom-color: var(--color-ink-warm); }
+
+  /* ============================================================
+     HERO — one dominant element: the headline
+     ============================================================ */
+  .hero {
+    padding-block: calc(72px * var(--scale-density)) calc(var(--section-gap) * 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--gap-lg);
+    text-align: center;
+  }
+  .hero h1 { max-width: 800px; }
+  .hero .lede { max-width: 46ch; text-align: center; }
+
+  /* Paste control: a pill input that grows into a card as you type */
+  .paste {
+    width: 100%;
+    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-sm);
+    align-items: center;
+  }
+  .paste-field {
+    width: 100%;
+    background: var(--color-pure-white);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-inputs);
+    padding: calc(16px * var(--scale-density)) calc(24px * var(--scale-density));
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gap-sm);
+    transition: border-color .18s ease, border-radius .2s ease;
+  }
+  /* Outline rather than a thicker border so focus never shifts layout, and not
+     a shadow — DESIGN.md rules those out. */
+  .paste-field:focus-within {
+    border-color: var(--color-iris-accent);
+    outline: 1.5px solid var(--color-iris-accent);
+    outline-offset: -1px;
+  }
+  .paste-field:hover { border-color: var(--color-slate); }
+  .paste-field:focus-within:hover { border-color: var(--color-iris-accent); }
+  .paste-field.is-open { border-radius: var(--radius-cards); }
+  .paste-field textarea {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    resize: none;
+    font-family: inherit;
+    font-size: var(--text-body);
+    line-height: 1.5;
+    color: var(--color-ink-warm);
+    height: calc(1.5 * var(--text-body));
+    max-height: 220px;
+    overflow-y: hidden;
+    outline: none;
+  }
+  .paste-field.is-full textarea { overflow-y: auto; }
+  .paste-field textarea::placeholder { color: var(--color-slate); }
+  .paste-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-sm);
+  }
+  .hero-note { font-size: var(--text-body-sm); color: var(--color-slate); }
+
+  /* ============================================================
+     SECTION 1 — sticky heading left / steps right (asymmetric)
+     ============================================================ */
+  .section { padding-block: var(--section-gap); }
+
+  .split-steps {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: var(--gap-xl);
+    align-items: start;
+  }
+  .sticky-head { position: sticky; top: calc(120px * var(--scale-density)); }
+  .sticky-head .eyebrow { display: block; margin-bottom: var(--gap-sm); }
+
+  .steps { display: flex; flex-direction: column; gap: var(--gap-md); }
+  .step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--gap-md);
+    align-items: start;
+  }
+  .step-badge {
+    width: calc(44px * var(--scale-density));
+    height: calc(44px * var(--scale-density));
+    border-radius: var(--radius-small);
+    background: var(--color-ink-warm);
+    color: var(--color-cream-paper);
+    display: grid;
+    place-items: center;
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    flex: none;
+  }
+  .step-body h3 { margin-bottom: var(--gap-xs); }
+  .step-body p { color: var(--color-slate); max-width: 52ch; }
+
+  /* ============================================================
+     SECTION 2 — full-bleed sandstone band with the live call mock
+     ============================================================ */
+  /* Recessed panel inset in the cream canvas rather than a full-bleed stripe,
+     so the canvas stays cream edge to edge and the nav mask always matches. */
+  .band-wrap { padding-block: var(--section-gap); }
+  .band {
+    background: var(--color-sandstone);
+    border-radius: var(--radius-cards);
+    padding: calc(var(--section-gap) * 0.62) calc(var(--card-padding) * 1.8);
+  }
+  .band-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-sm);
+    margin-bottom: var(--gap-xl);
+    max-width: 30ch;
+  }
+
+  .call-mock {
+    background: var(--color-pure-white);
+    border-radius: var(--radius-cards);
+    padding: calc(var(--card-padding) * 1.4);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--gap-xl);
+    align-items: center;
+  }
+
+  .call-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--gap-md);
+    min-width: calc(210px * var(--scale-density));
+  }
+  .orb-holder { position: relative; display: grid; place-items: center; }
+  .orb {
+    width: calc(132px * var(--scale-density));
+    height: calc(132px * var(--scale-density));
+    border-radius: 50%;
+    background: var(--color-cream-paper);
+    border: 1.5px solid var(--color-hairline);
+    display: grid;
+    place-items: center;
+    position: relative;
+    z-index: 1;
+    transition: border-color .3s ease;
+  }
+  .orb-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-iris-soft);
+    opacity: 0;
+  }
+  .call-mock[data-state="listening"] .orb { border-color: var(--color-iris-accent); }
+  .call-mock[data-state="speaking"] .orb { border-color: var(--color-iris-soft); }
+  .call-mock[data-state="listening"] .orb-ring,
+  .call-mock[data-state="speaking"] .orb-ring { animation: ripple 1.9s ease-out infinite; }
+  .call-mock[data-state="speaking"] .orb-ring:nth-child(2) { animation-delay: .5s; }
+  @keyframes ripple {
+    0%   { transform: scale(1);    opacity: .55; }
+    100% { transform: scale(1.45); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .orb-ring { animation: none !important; opacity: 0; }
+  }
+
+  /* Waveform inside the orb */
+  .wave { display: flex; align-items: center; gap: 5px; height: 44px; }
+  .wave span {
+    width: 4px;
+    border-radius: 2px;
+    background: var(--color-ink-warm);
+    height: 10px;
+    transition: height .25s ease;
+  }
+  .call-mock[data-state="listening"] .wave span { animation: bounce 1.1s ease-in-out infinite; }
+  .call-mock[data-state="speaking"] .wave span { animation: bounce .7s ease-in-out infinite; }
+  .wave span:nth-child(2) { animation-delay: .12s; }
+  .wave span:nth-child(3) { animation-delay: .24s; }
+  .wave span:nth-child(4) { animation-delay: .36s; }
+  .wave span:nth-child(5) { animation-delay: .18s; }
+  @keyframes bounce {
+    0%, 100% { height: 10px; }
+    50%      { height: 38px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wave span { animation: none !important; }
+  }
+
+  .call-timer {
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    color: var(--color-slate);
+    font-variant-numeric: tabular-nums;
+  }
+  .state-chip {
+    font-size: var(--text-caption);
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: calc(7px * var(--scale-density)) calc(16px * var(--scale-density));
+    border-radius: var(--radius-buttons);
+    background: var(--color-cream-paper);
+    color: var(--color-ink-warm);
+    white-space: nowrap;
+  }
+
+  .call-side { display: flex; flex-direction: column; gap: var(--gap-md); min-width: 0; }
+  .transcript-label {
+    font-size: var(--text-caption);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-slate);
+  }
+  .transcript {
+    font-size: var(--text-subheading);
+    line-height: 1.4;
+    letter-spacing: -0.2px;
+    min-height: calc(4.2 * 1.4 * var(--text-subheading) / 2);
+  }
+  .caret {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--color-iris-accent);
+    vertical-align: -2px;
+    margin-left: 2px;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+
+  .call-input-row { display: flex; gap: var(--gap-sm); align-items: center; }
+  .call-input {
+    flex: 1;
+    background: var(--color-cream-paper);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-inputs);
+    padding: calc(14px * var(--scale-density)) calc(20px * var(--scale-density));
+    font-size: var(--text-body-sm);
+    color: var(--color-slate);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .end-call {
+    width: calc(46px * var(--scale-density));
+    height: calc(46px * var(--scale-density));
+    border-radius: 50%;
+    background: var(--color-ink-warm);
+    color: var(--color-cream-paper);
+    display: grid;
+    place-items: center;
+    flex: none;
+    font-size: var(--text-body-sm);
+  }
+
+  /* ============================================================
+     PULL QUOTE — the single editorial (Playfair) moment
+     ============================================================ */
+  .quote-section { padding-block: var(--section-gap); }
+  .quote-inner {
+    display: grid;
+    grid-template-columns: 1fr 7fr;
+    gap: var(--gap-lg);
+    align-items: start;
+  }
+  .quote-rule { height: 1.5px; background: var(--color-ink-warm); margin-top: calc(0.7em * var(--scale-type)); }
+  blockquote {
+    font-family: var(--font-editorial);
+    font-style: italic;
+    font-size: calc(clamp(24px, 3vw, 34px) * var(--scale-type));
+    line-height: 1.3;
+    letter-spacing: -0.4px;
+    max-width: 24ch;
+  }
+
+  /* ============================================================
+     SECTION 3 — report: narrow text left, wide artifact right
+     ============================================================ */
+  .split-report {
+    display: grid;
+    grid-template-columns: 4fr 8fr;
+    gap: var(--gap-xl);
+    align-items: start;
+  }
+  .report-points { display: flex; flex-direction: column; gap: var(--gap-md); margin-top: var(--gap-lg); }
+  .report-point { display: grid; grid-template-columns: auto 1fr; gap: var(--gap-sm); align-items: start; }
+  .point-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--color-iris-soft);
+    margin-top: calc(0.55em * var(--scale-type));
+    flex: none;
+  }
+  .report-point strong { font-weight: 600; }
+  .report-point span { color: var(--color-slate); }
+
+  .report-card { display: flex; flex-direction: column; gap: var(--gap-md); padding: calc(var(--card-padding) * 1.3); }
+  .report-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: var(--gap-sm); flex-wrap: wrap;
+    padding-bottom: var(--gap-sm);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .score-total { font-size: var(--text-heading-sm); font-weight: 600; letter-spacing: -0.4px; font-variant-numeric: tabular-nums; }
+
+  .q-rows { display: flex; flex-direction: column; gap: var(--gap-sm); }
+  .q-row { display: grid; grid-template-columns: 1fr auto; gap: var(--gap-sm); align-items: center; }
+  .q-row p { font-size: var(--text-body-sm); line-height: 1.4; }
+  .q-meter { display: flex; align-items: center; gap: var(--gap-xs); }
+  .meter-track {
+    width: calc(76px * var(--scale-density));
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-sandstone);
+    overflow: hidden;
+  }
+  .meter-fill { height: 100%; background: var(--color-ink-warm); border-radius: 3px; }
+  .q-score { font-size: var(--text-body-sm); font-weight: 600; font-variant-numeric: tabular-nums; min-width: 4ch; text-align: right; }
+
+  .verdicts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-sm); }
+  .verdict {
+    background: var(--color-cream-paper);
+    border-radius: var(--radius-small);
+    padding: var(--gap-sm) calc(var(--gap-sm) * 1.2);
+  }
+  .verdict h4 {
+    font-size: var(--text-caption);
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-slate);
+    margin-bottom: 6px;
+  }
+  .verdict p { font-size: var(--text-body-sm); line-height: 1.45; }
+
+  /* ============================================================
+     FAQ — narrow single column, different rhythm again
+     ============================================================ */
+  .faq-inner { max-width: 760px; margin-inline: auto; }
+  .faq-head { text-align: center; display: flex; flex-direction: column; gap: var(--gap-sm); margin-bottom: var(--gap-xl); align-items: center; }
+  .faq-list { display: flex; flex-direction: column; gap: var(--gap-sm); }
+  /* Native <details> — keyboard-accessible and open/close-reliable with no JS. */
+  .faq-item {
+    background: var(--color-pure-white);
+    border-radius: var(--radius-cards);
+    overflow: hidden;
+  }
+  .faq-q {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-md);
+    text-align: left;
+    cursor: pointer;
+    font-size: var(--text-subheading);
+    font-weight: 500;
+    letter-spacing: -0.2px;
+    color: var(--color-ink-warm);
+    padding: var(--card-padding);
+    list-style: none;
+  }
+  .faq-q::-webkit-details-marker { display: none; }
+  .faq-q:hover { color: var(--color-iris-accent); }
+  .faq-sign { flex: none; width: 22px; height: 22px; position: relative; }
+  .faq-sign::before, .faq-sign::after {
+    content: ""; position: absolute; background: currentColor; border-radius: 2px;
+    inset-inline-start: 50%; inset-block-start: 50%;
+  }
+  .faq-sign::before { width: 14px; height: 1.5px; transform: translate(-50%, -50%); }
+  .faq-sign::after  { width: 1.5px; height: 14px; transform: translate(-50%, -50%); transition: transform .2s ease, opacity .2s ease; }
+  .faq-item[open] .faq-sign::after { transform: translate(-50%, -50%) rotate(90deg); opacity: 0; }
+  .faq-a {
+    color: var(--color-slate);
+    padding: 0 var(--card-padding) var(--card-padding);
+    max-width: 62ch;
+  }
+
+  /* ============================================================
+     FOOTER
+     ============================================================ */
+  /* Bottom padding clears the floating tuning panel so the footer bar
+     is never sitting underneath it. */
+  .footer { padding-block: var(--section-gap) calc(96px * var(--scale-density)); }
+  .footer-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--gap-lg);
+    text-align: center;
+  }
+  .footer-cta h2 { max-width: 18ch; }
+  .footer-bar {
+    margin-top: var(--section-gap);
+    padding-top: var(--gap-md);
+    border-top: 1px solid var(--color-hairline);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-md);
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--text-body-sm);
+    color: var(--color-slate);
+  }
+  .footer-bar nav { display: flex; gap: var(--gap-md); flex-wrap: wrap; }
+  .footer-bar a:hover { color: var(--color-ink-warm); }
+
+  /* ============================================================
+     CONTROL PANEL — design tuning knobs
+     ============================================================ */
+  .knobs { position: fixed; inset-block-end: 20px; inset-inline-end: 20px; z-index: 90; }
+  .knobs-toggle {
+    display: inline-flex; align-items: center; gap: var(--gap-xs);
+    background: var(--color-ink-warm);
+    color: var(--color-cream-paper);
+    border: 0; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    padding: 12px 20px; border-radius: 50px;
+    margin-inline-start: auto;
+  }
+  .knobs-panel {
+    display: none;
+    width: min(320px, calc(100vw - 40px));
+    background: var(--color-pure-white);
+    border: 1px solid var(--color-hairline);
+    border-radius: 28px;
+    padding: 20px;
+    margin-bottom: 10px;
+    max-height: min(70vh, 560px);
+    overflow-y: auto;
+  }
+  .knobs.is-open .knobs-panel { display: block; }
+  .knobs-title {
+    font-size: 12px; font-weight: 500; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--color-slate); margin-bottom: 16px;
+  }
+  .knob { margin-bottom: 18px; }
+  .knob-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 8px; margin-bottom: 8px;
+  }
+  .knob-name { font-size: 14px; font-weight: 500; }
+  .knob-val { font-size: 13px; color: var(--color-slate); font-variant-numeric: tabular-nums; }
+  .knob input[type="range"] {
+    width: 100%; margin: 0; accent-color: var(--color-iris-accent); cursor: pointer;
+  }
+  .knob-hint { font-size: 12px; color: var(--color-slate); margin-top: 6px; line-height: 1.4; }
+  .knobs-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .knobs-actions button {
+    flex: 1; font-family: inherit; font-size: 13px; font-weight: 500;
+    padding: 10px 14px; border-radius: 50px; cursor: pointer;
+    background: transparent; color: var(--color-ink-warm);
+    border: 1.5px solid var(--color-ink-warm);
+  }
+  .knobs-actions button:hover { background: var(--color-ink-warm); color: var(--color-cream-paper); }
+
+  /* ============================================================
+     RESPONSIVE — 1280 / 768 / 360
+     ============================================================ */
+  @media (max-width: 900px) {
+    .split-steps, .split-report { grid-template-columns: 1fr; gap: var(--gap-lg); }
+    .sticky-head { position: static; }
+    .sticky-head h2 { max-width: 20ch; }
+    .call-mock { grid-template-columns: 1fr; gap: var(--gap-lg); }
+    .call-stage { min-width: 0; }
+    .call-side { align-items: stretch; }
+    .quote-inner { grid-template-columns: 1fr; }
+    .quote-rule { width: 64px; }
+    blockquote { max-width: none; }
+    .report-points { margin-top: var(--gap-md); }
+  }
+
+  /* Links go before they wrap: below this width the four labels no longer fit
+     on one line inside the pill and push it to double height. */
+  @media (max-width: 880px) {
+    .nav-links { display: none; }
+    .nav { padding-inline-start: calc(20px * var(--scale-density)); }
+    .nav .btn { margin-inline-start: auto; }
+  }
+
+  @media (max-width: 760px) {
+    .verdicts { grid-template-columns: 1fr; }
+    .hero { padding-block: calc(44px * var(--scale-density)) calc(var(--section-gap) * 0.8); }
+    .band { padding: calc(var(--section-gap) * 0.5) calc(var(--card-padding) * 1.1); }
+  }
+
+  @media (max-width: 420px) {
+    :root { --page-gutter: calc(16px * var(--scale-density)); }
+    .btn { padding: calc(15px * var(--scale-density)) calc(24px * var(--scale-density)); width: 100%; }
+    .paste-actions { width: 100%; }
+    .call-mock { padding: var(--card-padding); }
+    .report-card { padding: var(--card-padding); }
+    .knobs { inset-block-end: 12px; inset-inline-end: 12px; }
+    .footer-bar { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+
+<header class="nav-wrap">
+  <div class="shell">
+    <nav class="nav">
+      <span class="wordmark"><span class="dot"></span>Репетиция</span>
+      <div class="nav-links">
+        <a href="#how">Как это работает</a>
+        <a href="#call">Экран звонка</a>
+        <a href="#report">Разбор</a>
+        <a href="#faq">Вопросы</a>
+      </div>
+      <button class="btn btn-sm btn-ghost" id="navCta" type="button">Начать тренировку</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- ===================== HERO ===================== -->
+  <section class="shell hero">
+    <span class="eyebrow">Без регистрации · Без оплаты</span>
+    <h1 class="h-display">
+      Пройдите это собеседование дважды. Первый раз — <span class="accent-word">здесь</span>.
+    </h1>
+    <p class="lede">
+      Вставьте текст вакансии — интервьюер прочитает её и позвонит вам с вопросами
+      именно по ней. Голосом, как на настоящем звонке.
+    </p>
+
+    <div class="paste">
+      <div class="paste-field" id="pasteField">
+        <textarea
+          id="vacancyInput"
+          rows="1"
+          placeholder="Вставьте текст вакансии — с hh, LinkedIn или из письма рекрутера"
+          aria-label="Текст вакансии"></textarea>
+      </div>
+      <div class="paste-actions">
+        <button class="btn btn-accent" id="heroCta" type="button">Начать тренировку</button>
+        <button class="btn btn-ghost" id="resumeBtn" type="button">Добавить резюме</button>
+      </div>
+      <p class="hero-note">Резюме не обязательно — с ним вопросы будут про ваш опыт.</p>
+    </div>
+  </section>
+
+  <!-- ===================== HOW IT WORKS ===================== -->
+  <section class="shell section" id="how">
+    <div class="split-steps">
+      <div class="sticky-head">
+        <span class="eyebrow">Как это работает</span>
+        <h2 class="h-section">От вставленной вакансии до первого вопроса — минута</h2>
+      </div>
+
+      <ol class="steps">
+        <li class="step">
+          <span class="step-badge">01</span>
+          <div class="step-body">
+            <h3 class="h-card">Вставляете вакансию</h3>
+            <p>Тот самый текст, на который вы откликнулись. Интервьюер вытаскивает из него
+              требования, стек и обязанности — и строит вопросы по ним, а не по общему списку
+              «расскажите о себе».</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-badge">02</span>
+          <div class="step-body">
+            <h3 class="h-card">Отвечаете голосом</h3>
+            <p>Он здоровается, задаёт первый вопрос и слушает. Ответили размыто — переспросит
+              и копнёт глубже, как живой человек. Ответили по делу — пойдёт дальше.
+              Микрофона нет или неудобно говорить — пишите текстом прямо во время звонка.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-badge">03</span>
+          <div class="step-body">
+            <h3 class="h-card">Получаете разбор</h3>
+            <p>Звонок заканчивается сам — интервьюер прощается после последнего вопроса.
+              Сразу за этим приходит отчёт: оценка по каждому ответу, что прозвучало
+              убедительно и где вы поплыли.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================== CALL DEMO ===================== -->
+  <section class="shell band-wrap" id="call">
+    <div class="band">
+      <div class="band-head">
+        <span class="eyebrow">Экран звонка</span>
+        <h2 class="h-section">Это не чат с ботом. Это звонок.</h2>
+      </div>
+
+      <div class="call-mock" id="callMock" data-state="speaking">
+        <div class="call-stage">
+          <div class="orb-holder">
+            <span class="orb-ring"></span>
+            <span class="orb-ring"></span>
+            <span class="orb">
+              <span class="wave" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+              </span>
+            </span>
+          </div>
+          <span class="call-timer" id="callTimer">04:12</span>
+          <span class="state-chip" id="stateChip">Интервьюер говорит</span>
+        </div>
+
+        <div class="call-side">
+          <span class="transcript-label" id="transcriptLabel">Вопрос интервьюера</span>
+          <p class="transcript" id="transcript"></p>
+          <div class="call-input-row">
+            <span class="call-input">Или напишите ответ вместо голоса…</span>
+            <span class="end-call" aria-hidden="true">✕</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PULL QUOTE ===================== -->
+  <section class="shell quote-section">
+    <div class="quote-inner">
+      <div class="quote-rule"></div>
+      <blockquote>«Здесь вы поплыли» лучше услышать от тренажёра, чем прочитать по лицу рекрутера.</blockquote>
+    </div>
+  </section>
+
+  <!-- ===================== REPORT ===================== -->
+  <section class="shell section" id="report">
+    <div class="split-report">
+      <div>
+        <span class="eyebrow">После звонка</span>
+        <h2 class="h-section" style="margin-top: var(--gap-sm);">Не «молодец», а построчный разбор</h2>
+        <div class="report-points">
+          <div class="report-point">
+            <span class="point-dot"></span>
+            <p><strong>Оценка по каждому вопросу.</strong>
+              <span>Видно не общее впечатление, а какой именно ответ просел.</span></p>
+          </div>
+          <div class="report-point">
+            <span class="point-dot"></span>
+            <p><strong>Сильные стороны.</strong>
+              <span>Формулировки, которые сработали — их стоит повторить на настоящем звонке.</span></p>
+          </div>
+          <div class="report-point">
+            <span class="point-dot"></span>
+            <p><strong>Слабые места.</strong>
+              <span>Где ответ был общим, где вы ушли от вопроса, где не хватило конкретики.</span></p>
+          </div>
+          <div class="report-point">
+            <span class="point-dot"></span>
+            <p><strong>Что сказать вместо.</strong>
+              <span>Не «подготовьтесь лучше», а какого ответа здесь ждали.</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card report-card">
+        <div class="report-head">
+          <div>
+            <span class="eyebrow">Итоги собеседования</span>
+            <p class="body-sm muted">Frontend-разработчик, React/TypeScript · 6 вопросов</p>
+          </div>
+          <span class="score-total">6,5 / 10</span>
+        </div>
+
+        <div class="q-rows">
+          <div class="q-row">
+            <p>Оптимизация рендеринга дашборда</p>
+            <div class="q-meter">
+              <span class="meter-track"><span class="meter-fill" style="width: 80%"></span></span>
+              <span class="q-score">8/10</span>
+            </div>
+          </div>
+          <div class="q-row">
+            <p>Типизация ответов API</p>
+            <div class="q-meter">
+              <span class="meter-track"><span class="meter-fill" style="width: 70%"></span></span>
+              <span class="q-score">7/10</span>
+            </div>
+          </div>
+          <div class="q-row">
+            <p>Конфликт в команде на код-ревью</p>
+            <div class="q-meter">
+              <span class="meter-track"><span class="meter-fill" style="width: 40%"></span></span>
+              <span class="q-score">4/10</span>
+            </div>
+          </div>
+          <div class="q-row">
+            <p>Тестирование компонентов</p>
+            <div class="q-meter">
+              <span class="meter-track"><span class="meter-fill" style="width: 50%"></span></span>
+              <span class="q-score">5/10</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="verdicts">
+          <div class="verdict">
+            <h4>Сильная сторона</h4>
+            <p>Про рендеринг ответили цифрами: назвали инструмент профилирования
+              и результат в миллисекундах. Такой ответ закрывает вопрос сразу.</p>
+          </div>
+          <div class="verdict">
+            <h4>Слабое место</h4>
+            <p>Про конфликт — пересказ ситуации без вашей роли в ней. Здесь ждали,
+              что вы сделали и чем закончилось.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FAQ ===================== -->
+  <section class="shell section" id="faq">
+    <div class="faq-inner">
+      <div class="faq-head">
+        <span class="eyebrow">Частые вопросы</span>
+        <h2 class="h-section">Да, бесплатно. Нет, вас никто не слушает.</h2>
+      </div>
+
+      <div class="faq-list">
+        <details class="faq-item" open>
+          <summary class="faq-q">Это точно бесплатно?<span class="faq-sign"></span></summary>
+          <p class="faq-a">Да. Ни карты, ни подписки, ни регистрации — открыли страницу,
+            вставили вакансию, начали звонок. Никаких «первые 3 интервью бесплатно».</p>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-q">Мои данные видны кому-то?<span class="faq-sign"></span></summary>
+          <p class="faq-a">Аккаунтов нет и базы нет — сохранять вас просто некуда.
+            Вакансия, ответы и разбор живут во вкладке браузера: закрыли — исчезли.
+            При этом текст обрабатывается языковой моделью, которая ведёт интервью, —
+            как в любом AI-сервисе. Поэтому не вставляйте то, что не должно попасть к третьей стороне.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-q">А если я не знаю, что отвечать?<span class="faq-sign"></span></summary>
+          <p class="faq-a">Так и скажите — это нормальная реплика на собеседовании.
+            Интервьюер задаст уточняющий вопрос вместо того, чтобы молча идти дальше по списку.
+            А в разборе вы увидите, какого ответа здесь ждали. Собственно, ради этого всё и затевалось.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-q">Нужен микрофон?<span class="faq-sign"></span></summary>
+          <p class="faq-a">Не обязательно. Отвечать можно текстом прямо во время звонка —
+            интервьюер продолжит разговор так же. Можно и смешивать: часть голосом, часть письменно.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-q">Сколько это длится?<span class="faq-sign"></span></summary>
+          <p class="faq-a">Приветствие, шесть вопросов по вакансии и прощание — обычно 5–10 минут.
+            Звонок завершается сам, ждать вашего «стоп» не нужно. Прервать можно в любой момент —
+            разбор придёт по тому, что успели наговорить.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-q">В каком браузере работает?<span class="faq-sign"></span></summary>
+          <p class="faq-a">Голос — в Chrome: там есть распознавание речи.
+            В остальных браузерах интервью идёт текстом, а разбор получается тот же.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="shell footer">
+  <div class="footer-cta">
+    <span class="eyebrow">Осталось одно действие</span>
+    <h2 class="h-section">Настоящее собеседование будет только одно. Эта попытка — <span class="accent-word">черновая</span>.</h2>
+    <button class="btn btn-accent" id="footerCta" type="button">Начать тренировку</button>
+    <p class="hero-note">Без регистрации · Работает в браузере · Ничего не сохраняем</p>
+  </div>
+
+  <div class="footer-bar">
+    <span class="wordmark"><span class="dot"></span>Репетиция</span>
+    <nav>
+      <a href="#how">Как это работает</a>
+      <a href="#report">Разбор</a>
+      <a href="#faq">Вопросы</a>
+    </nav>
+  </div>
+</footer>
+
+<!-- ===================== TUNING KNOBS ===================== -->
+<div class="knobs" id="knobs">
+  <div class="knobs-panel">
+    <p class="knobs-title">Подстройка макета</p>
+
+    <div class="knob">
+      <div class="knob-row">
+        <span class="knob-name">Плотность / отступы</span>
+        <span class="knob-val" id="valDensity">1.00×</span>
+      </div>
+      <input type="range" id="rngDensity" min="0.6" max="1.5" step="0.02" value="1" aria-label="Плотность и отступы">
+      <p class="knob-hint">Секции, паддинги карточек, промежутки. 1.00× = 100px между секциями.</p>
+    </div>
+
+    <div class="knob">
+      <div class="knob-row">
+        <span class="knob-name">Масштаб шрифта</span>
+        <span class="knob-val" id="valType">1.00×</span>
+      </div>
+      <input type="range" id="rngType" min="0.85" max="1.2" step="0.01" value="1" aria-label="Масштаб шрифта">
+      <p class="knob-hint">Вся шкала целиком. 1.00× = display 64px, body 16px.</p>
+    </div>
+
+    <div class="knob">
+      <div class="knob-row">
+        <span class="knob-name">Скругление</span>
+        <span class="knob-val" id="valRadius">1.00×</span>
+      </div>
+      <input type="range" id="rngRadius" min="0" max="1.3" step="0.02" value="1" aria-label="Радиус скругления">
+      <p class="knob-hint">0× — острые углы, 1.00× — карточки 40px / кнопки 50px по DESIGN.md.</p>
+    </div>
+
+    <div class="knobs-actions">
+      <button type="button" id="knobReset">Сбросить</button>
+      <button type="button" id="knobCopy">Скопировать CSS</button>
+    </div>
+  </div>
+
+  <button class="knobs-toggle" type="button" id="knobsToggle" aria-expanded="false">Подстройка макета</button>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var root = document.documentElement;
+
+  /* ---------------- Tuning knobs ---------------- */
+  var knobs = {
+    density: { input: document.getElementById('rngDensity'), out: document.getElementById('valDensity'), prop: '--scale-density' },
+    type:    { input: document.getElementById('rngType'),    out: document.getElementById('valType'),    prop: '--scale-type' },
+    radius:  { input: document.getElementById('rngRadius'),  out: document.getElementById('valRadius'),  prop: '--scale-radius' }
+  };
+  var STORE_KEY = 'rehearsal-landing-knobs';
+
+  function applyKnob(k) {
+    var v = parseFloat(knobs[k].input.value);
+    root.style.setProperty(knobs[k].prop, String(v));
+    knobs[k].out.textContent = v.toFixed(2) + '×';
+  }
+
+  function persist() {
+    try {
+      var data = {};
+      Object.keys(knobs).forEach(function (k) { data[k] = knobs[k].input.value; });
+      localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    } catch (e) { /* private mode / blocked storage — tuning just won't persist */ }
+  }
+
+  function restore() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      Object.keys(knobs).forEach(function (k) {
+        if (data[k] !== undefined) knobs[k].input.value = data[k];
+      });
+    } catch (e) { /* fall through to defaults */ }
+  }
+
+  restore();
+  Object.keys(knobs).forEach(function (k) {
+    applyKnob(k);
+    knobs[k].input.addEventListener('input', function () { applyKnob(k); persist(); });
+  });
+
+  var knobsBox = document.getElementById('knobs');
+  var knobsToggle = document.getElementById('knobsToggle');
+  knobsToggle.addEventListener('click', function () {
+    var open = knobsBox.classList.toggle('is-open');
+    knobsToggle.setAttribute('aria-expanded', String(open));
+  });
+
+  document.getElementById('knobReset').addEventListener('click', function () {
+    knobs.density.input.value = 1;
+    knobs.type.input.value = 1;
+    knobs.radius.input.value = 1;
+    Object.keys(knobs).forEach(applyKnob);
+    persist();
+  });
+
+  document.getElementById('knobCopy').addEventListener('click', function (e) {
+    var btn = e.currentTarget;
+    var d = parseFloat(knobs.density.input.value);
+    var t = parseFloat(knobs.type.input.value);
+    var r = parseFloat(knobs.radius.input.value);
+    var px = function (base, scale) { return Math.round(base * scale) + 'px'; };
+    var css = [
+      ':root {',
+      '  /* type */',
+      '  --text-caption: ' + px(12, t) + ';',
+      '  --text-body-sm: ' + px(14, t) + ';',
+      '  --text-body: ' + px(16, t) + ';',
+      '  --text-subheading: ' + px(20, t) + ';',
+      '  --text-heading-sm: ' + px(25, t) + ';',
+      '  --text-heading: ' + px(40, t) + ';',
+      '  --text-display: ' + px(64, t) + ';',
+      '  /* radii */',
+      '  --radius-cards: ' + px(40, r) + ';',
+      '  --radius-buttons: ' + px(50, r) + ';',
+      '  --radius-nav: ' + px(50, r) + ';',
+      '  --radius-inputs: ' + px(50, r) + ';',
+      '  --radius-small: ' + px(10, r) + ';',
+      '  /* spacing */',
+      '  --section-gap: ' + px(100, d) + ';',
+      '  --card-padding: ' + px(24, d) + ';',
+      '}'
+    ].join('\n');
+
+    var done = function (ok) {
+      btn.textContent = ok ? 'Скопировано' : 'Не вышло';
+      setTimeout(function () { btn.textContent = 'Скопировать CSS'; }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(css).then(function () { done(true); }, function () { done(false); });
+    } else {
+      done(false);
+    }
+  });
+
+  /* ---------------- Hero paste field: pill grows into a card ---------------- */
+  var ta = document.getElementById('vacancyInput');
+  var field = document.getElementById('pasteField');
+  var oneLine = 0;
+
+  function autoGrow() {
+    ta.style.height = 'auto';
+    // Height of a single empty line, measured once, is the baseline the pill is
+    // sized to; anything taller means real content and the pill becomes a card.
+    if (!oneLine) oneLine = ta.scrollHeight;
+    var wanted = ta.scrollHeight;
+    ta.style.height = Math.min(wanted, 220) + 'px';
+    field.classList.toggle('is-open', wanted > oneLine + 4);
+    field.classList.toggle('is-full', wanted > 220);
+  }
+  ta.addEventListener('input', autoGrow);
+  ta.addEventListener('focus', autoGrow);
+  // Run once so the collapsed pill is exactly one line tall and never shows a
+  // scrollbar stub from a mismatch between the CSS height and real line height.
+  autoGrow();
+
+  /* ---------------- Nav CTA: keep exactly one violet fill on screen ----------------
+     DESIGN.md puts an accent pill in the nav AND says the accent fill is the only
+     one on the page. Both hold if the nav pill only turns violet while no other
+     accent CTA is visible. */
+  var heroCta = document.getElementById('heroCta');
+  var footerCta = document.getElementById('footerCta');
+  var navCta = document.getElementById('navCta');
+
+  if ('IntersectionObserver' in window) {
+    var visible = new Set();
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) visible.add(en.target); else visible.delete(en.target);
+      });
+      var lonely = visible.size === 0;
+      navCta.classList.toggle('btn-accent', lonely);
+      navCta.classList.toggle('btn-ghost', !lonely);
+    }, { threshold: 0 });
+    io.observe(heroCta);
+    io.observe(footerCta);
+  }
+
+  /* ---------------- CTAs point at the one real action ---------------- */
+  function focusPaste() {
+    document.querySelector('.hero').scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start'
+    });
+    setTimeout(function () { ta.focus(); }, 420);
+  }
+  navCta.addEventListener('click', focusPaste);
+  footerCta.addEventListener('click', focusPaste);
+  heroCta.addEventListener('click', function () { ta.focus(); });
+  document.getElementById('resumeBtn').addEventListener('click', focusPaste);
+
+  /* ---------------- Live call mock ----------------
+     Cycles the three states the real call screen has, so the preview shows
+     what the product actually does rather than a frozen screenshot. */
+  var mock = document.getElementById('callMock');
+  var chip = document.getElementById('stateChip');
+  var label = document.getElementById('transcriptLabel');
+  var line = document.getElementById('transcript');
+  var timerEl = document.getElementById('callTimer');
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var beats = [
+    {
+      state: 'speaking', chip: 'Интервьюер говорит', label: 'Вопрос интервьюера',
+      text: 'Вы написали, что ускорили дашборд втрое. Что именно там тормозило и как вы это нашли?',
+      hold: 3400
+    },
+    {
+      state: 'listening', chip: 'Слушаю вас', label: 'Вы говорите',
+      text: 'Профилировал во вкладке Performance, узким местом оказались лишние ре-рендеры таблицы…',
+      hold: 3200
+    },
+    {
+      state: 'thinking', chip: 'Интервьюер думает', label: 'Вопрос интервьюера',
+      text: '', hold: 900
+    },
+    {
+      state: 'speaking', chip: 'Интервьюер говорит', label: 'Вопрос интервьюера',
+      text: 'Хорошо. А как вы убедились, что после мемоизации ре-рендеров действительно стало меньше?',
+      hold: 3600
+    }
+  ];
+
+  var beat = 0;
+  var typeTimer = null;
+
+  function typeOut(text, done) {
+    line.textContent = '';
+    if (reduced || !text) {
+      line.textContent = text;
+      if (done) setTimeout(done, 0);
+      return;
+    }
+    var i = 0;
+    var caret = document.createElement('span');
+    caret.className = 'caret';
+    line.appendChild(caret);
+    typeTimer = setInterval(function () {
+      i += 1;
+      caret.remove();
+      line.textContent = text.slice(0, i);
+      if (i < text.length) {
+        line.appendChild(caret);
+      } else {
+        clearInterval(typeTimer);
+        typeTimer = null;
+        if (done) done();
+      }
+    }, 26);
+  }
+
+  function playBeat() {
+    var b = beats[beat];
+    mock.setAttribute('data-state', b.state);
+    chip.textContent = b.chip;
+    label.textContent = b.label;
+    if (typeTimer) { clearInterval(typeTimer); typeTimer = null; }
+    typeOut(b.text, function () {
+      setTimeout(next, b.hold);
+    });
+    if (!b.text) setTimeout(next, b.hold);
+  }
+
+  function next() {
+    beat = (beat + 1) % beats.length;
+    playBeat();
+  }
+
+  var seconds = 252;
+  setInterval(function () {
+    seconds += 1;
+    var m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    var s = String(seconds % 60).padStart(2, '0');
+    timerEl.textContent = m + ':' + s;
+  }, 1000);
+
+  /* Only run the demo loop while it's actually on screen. */
+  if ('IntersectionObserver' in window) {
+    var started = false;
+    new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting && !started) { started = true; playBeat(); }
+    }, { threshold: 0.25 }).observe(mock);
+  } else {
+    playBeat();
+  }
+})();
+</script>
