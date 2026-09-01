@@ -480,3 +480,18 @@
   .footerBar { flex-direction: column; align-items: flex-start; }
   .transcript { min-height: 5.6em; }
 }
+
+/* The nav CTA is mounted only once the hero and footer CTAs are off screen,
+   so it arrives mid-scroll — fade it in rather than letting it pop. */
+.navCta {
+  animation: navCtaIn 0.22s ease-out;
+}
+
+@keyframes navCtaIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navCta { animation: none; }
+}

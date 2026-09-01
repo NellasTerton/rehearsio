@@ -103,11 +103,8 @@ export default function AccountBar({ lang }: { lang: Lang }) {
     return (
       <>
         <div className={styles.bar}>
-          <button type="button" className={styles.link} onClick={() => setAuthOpen(true)}>
+          <button type="button" className={styles.signInBtn} onClick={() => setAuthOpen(true)}>
             {t.signIn}
-          </button>
-          <button type="button" className={styles.cta} onClick={() => setAuthOpen(true)}>
-            {t.getVoice}
           </button>
         </div>
         {authOpen && <AuthDialog lang={lang} onClose={() => setAuthOpen(false)} />}

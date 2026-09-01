@@ -321,7 +321,7 @@ export default function LandingScreen({ onStart }: Props) {
 
   const heroCtaRef = useRef<HTMLButtonElement | null>(null);
   const footerCtaRef = useRef<HTMLButtonElement | null>(null);
-  const [navAccent, setNavAccent] = useState(true);
+  const [navAccent, setNavAccent] = useState(false);
   const [starting, setStarting] = useState(false);
   const [limitHit, setLimitHit] = useState<null | "anonymous" | "free">(null);
   const [authOpen, setAuthOpen] = useState(false);
@@ -392,24 +392,58 @@ export default function LandingScreen({ onStart }: Props) {
     });
   }
 
-  // Exactly one violet CTA fill on screen at a time (DESIGN.md): the nav pill
-  // turns accent only while neither the hero nor the footer CTA is visible.
+  // Exactly one violet CTA fill on screen at a time (DESIGN.md): the nav CTA
+  // is mounted only while neither the hero nor the footer CTA is visible.
+  //
+  // Measured from scroll position rather than IntersectionObserver on purpose.
+  // The nav button's existence depends on this, not just its colour, so an
+  // observer that silently never fires (which happens in some embedded and
+  // headless browsers) would mean no header CTA at all, anywhere on the page.
+  // Rect maths on scroll always runs.
   useEffect(() => {
-    if (!("IntersectionObserver" in window)) return;
-    const visible = new Set<Element>();
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) visible.add(entry.target);
-          else visible.delete(entry.target);
-        });
-        setNavAccent(visible.size === 0);
-      },
-      { threshold: 0 }
-    );
-    if (heroCtaRef.current) io.observe(heroCtaRef.current);
-    if (footerCtaRef.current) io.observe(footerCtaRef.current);
-    return () => io.disconnect();
+    // innerHeight can report 0 in embedded/headless viewports, which would
+    // make every element measure as off screen and pin the header CTA on.
+    // clientHeight is the layout viewport and is the more dependable of the
+    // two; if both are 0 there is nothing meaningful to measure against.
+    const viewportHeight = () =>
+      document.documentElement.clientHeight || window.innerHeight || 0;
+
+    const isOnScreen = (el: HTMLElement | null, vh: number) => {
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return r.bottom > 0 && r.top < vh;
+    };
+
+    const update = () => {
+      const vh = viewportHeight();
+      if (!vh) return; // Can't measure yet — keep whatever state we had.
+      setNavAccent(
+        !isOnScreen(heroCtaRef.current, vh) && !isOnScreen(footerCtaRef.current, vh)
+      );
+    };
+
+    update();
+    // On mount the web font usually hasn't landed yet, so the hero CTA can
+    // still measure as a zero-height box — which reads as "off screen" and
+    // would leave the header CTA showing at the top of the page until the
+    // first scroll. Re-measure whenever the layout actually changes.
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(update)
+        : null;
+    if (ro) {
+      ro.observe(document.body);
+      if (heroCtaRef.current) ro.observe(heroCtaRef.current);
+    }
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    window.addEventListener("load", update);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      window.removeEventListener("load", update);
+    };
   }, []);
 
   // Decorative call timer, purely for the marketing mock.
@@ -599,14 +633,16 @@ export default function LandingScreen({ onStart }: Props) {
               </button>
             </div>
             <AccountBar lang={lang} />
-            <button
-              type="button"
-              className={`${styles.btn} ${styles.btnSm} ${navAccent ? styles.btnAccent : styles.btnGhost}`}
-              onClick={handleStart}
-              disabled={starting}
-            >
-              {t.nav.cta}
-            </button>
+            {navAccent && (
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnSm} ${styles.btnAccent} ${styles.navCta}`}
+                onClick={handleStart}
+                disabled={starting}
+              >
+                {t.nav.cta}
+              </button>
+            )}
           </nav>
         </div>
       </header>
