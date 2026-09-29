@@ -17,7 +17,12 @@ interface Props {
   onEndCall: (transcript: ChatMessage[]) => void;
 }
 
-const SILENCE_MS = 1300;
+// How long a pause has to be before we treat the candidate as done talking.
+// This used to be 1300ms, which reliably cut people off mid-thought on a
+// normal "let me think for a second" pause and submitted the half-answer as
+// final. Long enough to allow a real thinking pause, short enough that the
+// call doesn't feel stuck after a genuinely finished answer.
+const SILENCE_MS = 2200;
 // The gap between the interviewer's audio.onended firing and the room
 // actually going quiet. audio.onended fires the instant the decoded track
 // finishes, but the physical sound doesn't stop at the same millisecond —
@@ -222,9 +227,10 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
         resetSilenceTimer();
       };
 
-      recognition.onspeechend = () => {
-        stopAndProcess();
-      };
+      // Deliberately NOT wired to stopAndProcess(): see SILENCE_MS comment
+      // above for why. Left as a no-op rather than removed so it's obvious
+      // this was a decision, not an oversight, if someone goes looking for it.
+      recognition.onspeechend = () => {};
 
       recognition.onerror = (event: any) => {
         if (event.error === "no-speech" || event.error === "aborted") {
