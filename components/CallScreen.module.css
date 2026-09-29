@@ -277,12 +277,15 @@
 .sendBtn:hover:not(:disabled) { background: #423ff0; }
 .sendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* The primary way to end a turn now (see CallScreen.tsx) — deliberately as
-   visible as .sendBtn, not a quiet secondary link, since guessing this
-   exists defeats the point of having it. */
-.doneBtn {
-  display: block;
-  margin: 0 auto 18px;
+/* Manual recording toggle (see CallScreen.tsx) — two clearly different looks
+   for "press to start" vs "actively recording, press to pause", so there's
+   never any doubt about which state it's in. */
+.micBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 auto;
   background: var(--color-iris-accent);
   color: var(--color-pure-white);
   border: none;
@@ -294,8 +297,38 @@
   cursor: pointer;
   transition: background-color 0.18s ease, transform 0.12s ease;
 }
-.doneBtn:hover { background: #423ff0; }
-.doneBtn:active { transform: scale(0.97); }
+.micBtn:hover { background: #423ff0; }
+.micBtn:active { transform: scale(0.97); }
+
+.micBtn[data-armed="true"] {
+  background: #c1453b;
+}
+.micBtn[data-armed="true"]:hover { background: #a83a31; }
+
+.micDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.micBtn[data-armed="true"] .micDot {
+  animation: micPulse 1.1s ease-in-out infinite;
+}
+@keyframes micPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .micBtn[data-armed="true"] .micDot { animation: none; }
+}
+
+.micHint {
+  margin: 8px 0 18px;
+  text-align: center;
+  font-size: var(--text-caption);
+  color: var(--color-slate);
+}
 
 /* ---------- Footer ---------- */
 

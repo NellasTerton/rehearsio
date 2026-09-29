@@ -17,25 +17,13 @@ interface Props {
   onEndCall: (transcript: ChatMessage[]) => void;
 }
 
-// Guessing "the candidate is done" purely from a pause length is the wrong
-// primary mechanism for this product: it's built for interview practice,
-// where pausing mid-answer to think is completely normal, not an edge case.
-// No fixed number is right for both someone who talks in bursts with long
-// thinking pauses and someone who's genuinely finished. So it isn't the
-// primary mechanism any more — there's now an explicit "done answering"
-// button (see the JSX below) that ends the turn on request instead of by
-// guesswork. This timer is only the safety net for someone who doesn't
-// notice that button and just stops talking, which is why it's generous
-// rather than tuned to feel snappy.
-const SILENCE_MS = 6000;
-// The gap between the interviewer's audio.onended firing and the room
-// actually going quiet. audio.onended fires the instant the decoded track
-// finishes, but the physical sound doesn't stop at the same millisecond —
-// OS/driver audio buffering and (especially) Bluetooth speakers commonly lag
-// 100-300ms behind, and room reverb adds more. Starting recognition in the
-// same tick as onended meant the mic reliably caught the tail of the
-// interviewer's own voice and transcribed it as the candidate's answer.
-const POST_SPEECH_LISTEN_DELAY_MS = 450;
+
+// The mic is never armed automatically (see toggleMic below) — recording
+// only starts when the candidate explicitly presses the button or hits
+// space. That's a deliberate design choice, not just a UX preference: it
+// also structurally rules out the mic ever catching the tail of the
+// interviewer's own voice, since nothing ever arms it right after the
+// interviewer stops talking.
 
 // All the interview's own spoken/logical content (system prompt, per-turn state
 // message, closing lines) is built bilingually in lib/prompts.ts and lib/groq
@@ -53,7 +41,9 @@ const CALL_COPY: Record<
     inputCanType: string;
     inputWait: string;
     send: string;
-    doneAnswering: string;
+    micStart: string;
+    micStop: string;
+    micHint: string;
     endCallAria: string;
     endCallHint: string;
     networkError: string;
@@ -78,7 +68,9 @@ const CALL_COPY: Record<
     inputCanType: "Напишите ответ вместо голоса...",
     inputWait: "Дождитесь вопроса...",
     send: "Отправить",
-    doneAnswering: "Готово, жду вопрос",
+    micStart: "Включить микрофон",
+    micStop: "Пауза",
+    micHint: "Пробел или кнопка — включить и выключить запись, можно сколько угодно раз. Отправка — отдельной кнопкой.",
     endCallAria: "Завершить звонок",
     endCallHint: "Завершить",
     networkError: "Не удалось связаться с интервьюером. Проверьте соединение и попробуйте снова.",
@@ -99,7 +91,9 @@ const CALL_COPY: Record<
       "Voice input isn't available in this browser — answer by typing below, or open this page in Chrome.",
     questionLabel: "Question",
     youSpeakLabel: "You're speaking",
-    doneAnswering: "Done, I'm finished",
+    micStart: "Start recording",
+    micStop: "Pause",
+    micHint: "Space or the button toggles recording — as many times as you like. Sending is a separate button.",
     inputCanType: "Type your answer instead of speaking...",
     inputWait: "Wait for the question...",
     send: "Send",
@@ -142,16 +136,16 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
   const [error, setError] = useState("");
 
   const [textInput, setTextInput] = useState("");
+  // Mirrors isRecognizingRef for rendering (the ref is the synchronous source
+  // of truth used inside recognition callbacks; this is just so the mic
+  // button can redraw). Mic never arms itself — see the comment above.
+  const [micArmed, setMicArmed] = useState(false);
 
   const messagesRef = useRef<ChatMessage[]>([]);
   const recognitionRef = useRef<any>(null);
   const isRecognizingRef = useRef(false);
-  const finalTranscriptRef = useRef("");
-  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const startListenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const callActiveRef = useRef(true);
   const callStateRef = useRef<CallState>("idle");
-  const typingPausedRef = useRef(false);
 
   const ttsQueueRef = useRef<string[]>([]);
   const isSpeakingRef = useRef(false);
@@ -185,6 +179,22 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
   useEffect(() => {
     const id = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // Space toggles the mic, mirroring the button — but not while focus is on
+  // an editable element (typing a space should type a space, not hijack the
+  // mic), and toggleMic's own guards already cover "is it even our turn".
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.code !== "Space") return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "TEXTAREA" || tag === "INPUT" || target?.isContentEditable) return;
+      e.preventDefault();
+      toggleMic();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   // Setup speech recognition (if available) + kick off the first question.
@@ -221,24 +231,27 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
       recognition.interimResults = true;
       recognition.lang = T.speechLang;
 
+      // Final chunks land straight in the textInput field — the transcript
+      // IS the answer field, editable like anything typed there. This is
+      // what makes toggling the mic on and off repeatedly just work: each
+      // armed session only needs to know what IT heard (event.resultIndex
+      // already gives us just the new results), and it appends onto
+      // whatever's already in the field rather than replacing it.
       recognition.onresult = (event: any) => {
         let interim = "";
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const result = event.results[i];
           if (result.isFinal) {
-            finalTranscriptRef.current += result[0].transcript + " ";
+            const chunk = result[0].transcript.trim();
+            if (chunk) {
+              setTextInput((prev) => (prev.trim() ? `${prev.trim()} ${chunk}` : chunk));
+            }
           } else {
             interim += result[0].transcript;
           }
         }
         setInterimText(interim);
-        resetSilenceTimer();
       };
-
-      // Deliberately NOT wired to stopAndProcess(): see SILENCE_MS comment
-      // above for why. Left as a no-op rather than removed so it's obvious
-      // this was a decision, not an oversight, if someone goes looking for it.
-      recognition.onspeechend = () => {};
 
       recognition.onerror = (event: any) => {
         if (event.error === "no-speech" || event.error === "aborted") {
@@ -249,24 +262,15 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
         }
       };
 
+      // No auto-restart and no auto-submit here on purpose — arming the mic
+      // is now always an explicit action (the toggle button or space), so
+      // ending a recognition session should just... end it. What happens
+      // next (record again, edit the text, hit send) is entirely up to the
+      // candidate, not guessed at here.
       recognition.onend = () => {
         isRecognizingRef.current = false;
-        if (!callActiveRef.current) return;
-        const text = finalTranscriptRef.current.trim();
-        finalTranscriptRef.current = "";
+        setMicArmed(false);
         setInterimText("");
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-
-        if (text) {
-          submitAnswer(text);
-        } else if (typingPausedRef.current) {
-          // Recognition was aborted because the user focused the text field —
-          // don't auto-restart listening, let blur/send decide what's next.
-          typingPausedRef.current = false;
-        } else if (callStateRef.current === "listening") {
-          // No speech captured yet — keep listening.
-          startListening();
-        }
       };
 
       recognitionRef.current = recognition;
@@ -280,8 +284,6 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
     return () => {
       callActiveRef.current = false;
       abortControllerRef.current?.abort();
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      if (startListenTimerRef.current) clearTimeout(startListenTimerRef.current);
       if (speakWatchdogRef.current) clearInterval(speakWatchdogRef.current);
       speakTokenRef.current++;
       if (recognition) {
@@ -289,7 +291,6 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
           recognition.onresult = null;
           recognition.onend = null;
           recognition.onerror = null;
-          recognition.onspeechend = null;
           recognition.abort();
         } catch {
           // ignore
@@ -324,33 +325,31 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
     }
   }
 
-  function resetSilenceTimer() {
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    silenceTimerRef.current = setTimeout(() => {
-      stopAndProcess();
-    }, SILENCE_MS);
-  }
+  /**
+   * The only way the mic ever starts or stops listening — a direct request
+   * from the candidate (button click or space), never a guess by the app.
+   * Calling it while armed pauses recognition (whatever was said stays in
+   * textInput); calling it again resumes and appends. Toggle as many times
+   * as needed before hitting send.
+   */
+  function toggleMic() {
+    if (!callActiveRef.current || !recognitionRef.current) return;
+    if (callStateRef.current !== "listening") return;
 
-  function stopAndProcess() {
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    if (isRecognizingRef.current && recognitionRef.current) {
+    if (isRecognizingRef.current) {
       try {
         recognitionRef.current.stop();
       } catch {
         // ignore
       }
+      return;
     }
-  }
 
-  function startListening() {
-    if (!callActiveRef.current || !recognitionRef.current) return;
-    if (isRecognizingRef.current) return;
-    finalTranscriptRef.current = "";
     setInterimText("");
     try {
       recognitionRef.current.start();
       isRecognizingRef.current = true;
-      setCallState("listening");
+      setMicArmed(true);
     } catch {
       // start() can throw if already started; ignore
     }
@@ -626,39 +625,18 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
       }
       // Keep the question text on screen while the candidate answers — it only
       // gets replaced once the next question actually starts streaming in.
-      if (recognitionRef.current) {
-        // Don't start the mic in the same tick the interviewer's audio ends —
-        // see POST_SPEECH_LISTEN_DELAY_MS above. Re-check the idle conditions
-        // when the timer fires rather than assuming nothing changed: the
-        // candidate could have barged in with a typed answer, or the call
-        // could have ended, during the delay.
-        if (startListenTimerRef.current) clearTimeout(startListenTimerRef.current);
-        startListenTimerRef.current = setTimeout(() => {
-          startListenTimerRef.current = null;
-          if (
-            callActiveRef.current &&
-            streamDoneRef.current &&
-            ttsQueueRef.current.length === 0 &&
-            !isSpeakingRef.current &&
-            !isRecognizingRef.current
-          ) {
-            startListening();
-          }
-        }, POST_SPEECH_LISTEN_DELAY_MS);
-      } else {
-        // Text-only mode: no mic to start, just mark it as the user's turn.
-        setCallState("listening");
-      }
+      // The mic itself is never armed here — that's always an explicit
+      // toggleMic() call from the candidate, whether there's a mic available
+      // or not (in text-only mode there's just nothing to arm).
+      setCallState("listening");
     }
   }
 
-  /** Submits a candidate answer, whether it came from speech or the text field. */
+  /** Submits a candidate answer — whatever's currently in the text field,
+   * regardless of whether it got there by speech, typing, or both. */
   function submitAnswer(rawText: string) {
     const text = rawText.trim();
     if (!text || !callActiveRef.current) return;
-
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    if (startListenTimerRef.current) clearTimeout(startListenTimerRef.current);
 
     // Barge-in: if the interviewer is still (or about to be) speaking when the
     // candidate submits a typed answer, cut the playback short instead of making
@@ -671,15 +649,18 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
       cancelSpeechIfActive();
     }
 
+    // The candidate might hit send while the mic is still armed (didn't
+    // bother toggling it off first) — stop it as part of submitting rather
+    // than requiring that extra step.
     if (isRecognizingRef.current && recognitionRef.current) {
-      typingPausedRef.current = true;
       try {
         recognitionRef.current.abort();
       } catch {
         // ignore
       }
+      isRecognizingRef.current = false;
+      setMicArmed(false);
     }
-    finalTranscriptRef.current = "";
     setInterimText("");
     setTextInput("");
     // Leave liveAssistantText showing the question just answered — it'll be
@@ -691,25 +672,17 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
   }
 
   function handleTextInputFocus() {
+    // Editing the field while the mic is still appending to it would produce
+    // interleaved, confusing text — pause recognition, the candidate can
+    // toggle it back on once they're done editing.
     if (isRecognizingRef.current && recognitionRef.current) {
-      typingPausedRef.current = true;
       try {
         recognitionRef.current.abort();
       } catch {
         // ignore
       }
-    }
-  }
-
-  function handleTextInputBlur() {
-    if (
-      !textInput.trim() &&
-      callActiveRef.current &&
-      callStateRef.current === "listening" &&
-      !isRecognizingRef.current &&
-      recognitionRef.current
-    ) {
-      startListening();
+      isRecognizingRef.current = false;
+      setMicArmed(false);
     }
   }
 
@@ -872,8 +845,6 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
 
   function handleEndCall() {
     callActiveRef.current = false;
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    if (startListenTimerRef.current) clearTimeout(startListenTimerRef.current);
     if (speakWatchdogRef.current) clearInterval(speakWatchdogRef.current);
     speakTokenRef.current++;
     try {
@@ -951,16 +922,23 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
           </div>
         )}
 
-        {/* Explicit end-of-turn control: guessing "done talking" purely from a
-            pause is fundamentally the wrong tool for this product specifically
-            — it's built for people who pause to think, not fluent speakers.
-            The silence timer below still exists as a safety net for anyone who
-            doesn't notice this button, but it's generous now precisely because
-            this button is the expected way to end a turn, not the timer. */}
+        {/* Recording is a manual toggle, not a guess: click (or press space)
+            to start, again to pause — repeat as many times as needed while
+            thinking through an answer. Sending is the separate button below,
+            also always explicit. */}
         {supported && callState === "listening" && (
-          <button type="button" className={styles.doneBtn} onClick={stopAndProcess}>
-            {T.doneAnswering}
-          </button>
+          <>
+            <button
+              type="button"
+              className={styles.micBtn}
+              data-armed={micArmed}
+              onClick={toggleMic}
+            >
+              <span className={styles.micDot} aria-hidden="true" />
+              {micArmed ? T.micStop : T.micStart}
+            </button>
+            <p className={styles.micHint}>{T.micHint}</p>
+          </>
         )}
 
         <form
@@ -975,7 +953,6 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
             onFocus={handleTextInputFocus}
-            onBlur={handleTextInputBlur}
             onKeyDown={handleTextInputKeyDown}
             placeholder={canType ? T.inputCanType : T.inputWait}
             disabled={!canType}
