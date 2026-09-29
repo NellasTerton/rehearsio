@@ -18,6 +18,14 @@ interface Props {
 }
 
 const SILENCE_MS = 1300;
+// The gap between the interviewer's audio.onended firing and the room
+// actually going quiet. audio.onended fires the instant the decoded track
+// finishes, but the physical sound doesn't stop at the same millisecond —
+// OS/driver audio buffering and (especially) Bluetooth speakers commonly lag
+// 100-300ms behind, and room reverb adds more. Starting recognition in the
+// same tick as onended meant the mic reliably caught the tail of the
+// interviewer's own voice and transcribed it as the candidate's answer.
+const POST_SPEECH_LISTEN_DELAY_MS = 450;
 
 // All the interview's own spoken/logical content (system prompt, per-turn state
 // message, closing lines) is built bilingually in lib/prompts.ts and lib/groq
@@ -127,6 +135,7 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
   const isRecognizingRef = useRef(false);
   const finalTranscriptRef = useRef("");
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startListenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const callActiveRef = useRef(true);
   const callStateRef = useRef<CallState>("idle");
   const typingPausedRef = useRef(false);
@@ -258,6 +267,7 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
       callActiveRef.current = false;
       abortControllerRef.current?.abort();
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (startListenTimerRef.current) clearTimeout(startListenTimerRef.current);
       if (speakWatchdogRef.current) clearInterval(speakWatchdogRef.current);
       speakTokenRef.current++;
       if (recognition) {
@@ -603,7 +613,24 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
       // Keep the question text on screen while the candidate answers — it only
       // gets replaced once the next question actually starts streaming in.
       if (recognitionRef.current) {
-        startListening();
+        // Don't start the mic in the same tick the interviewer's audio ends —
+        // see POST_SPEECH_LISTEN_DELAY_MS above. Re-check the idle conditions
+        // when the timer fires rather than assuming nothing changed: the
+        // candidate could have barged in with a typed answer, or the call
+        // could have ended, during the delay.
+        if (startListenTimerRef.current) clearTimeout(startListenTimerRef.current);
+        startListenTimerRef.current = setTimeout(() => {
+          startListenTimerRef.current = null;
+          if (
+            callActiveRef.current &&
+            streamDoneRef.current &&
+            ttsQueueRef.current.length === 0 &&
+            !isSpeakingRef.current &&
+            !isRecognizingRef.current
+          ) {
+            startListening();
+          }
+        }, POST_SPEECH_LISTEN_DELAY_MS);
       } else {
         // Text-only mode: no mic to start, just mark it as the user's turn.
         setCallState("listening");
@@ -617,6 +644,7 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
     if (!text || !callActiveRef.current) return;
 
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    if (startListenTimerRef.current) clearTimeout(startListenTimerRef.current);
 
     // Barge-in: if the interviewer is still (or about to be) speaking when the
     // candidate submits a typed answer, cut the playback short instead of making
@@ -831,6 +859,7 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
   function handleEndCall() {
     callActiveRef.current = false;
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    if (startListenTimerRef.current) clearTimeout(startListenTimerRef.current);
     if (speakWatchdogRef.current) clearInterval(speakWatchdogRef.current);
     speakTokenRef.current++;
     try {
