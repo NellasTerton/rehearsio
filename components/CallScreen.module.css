@@ -277,6 +277,26 @@
 .sendBtn:hover:not(:disabled) { background: #423ff0; }
 .sendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* The primary way to end a turn now (see CallScreen.tsx) — deliberately as
+   visible as .sendBtn, not a quiet secondary link, since guessing this
+   exists defeats the point of having it. */
+.doneBtn {
+  display: block;
+  margin: 0 auto 18px;
+  background: var(--color-iris-accent);
+  color: var(--color-pure-white);
+  border: none;
+  border-radius: var(--radius-buttons);
+  padding: 12px 24px;
+  font-family: inherit;
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.12s ease;
+}
+.doneBtn:hover { background: #423ff0; }
+.doneBtn:active { transform: scale(0.97); }
+
 /* ---------- Footer ---------- */
 
 .footer {

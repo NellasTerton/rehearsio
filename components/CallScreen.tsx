@@ -17,12 +17,17 @@ interface Props {
   onEndCall: (transcript: ChatMessage[]) => void;
 }
 
-// How long a pause has to be before we treat the candidate as done talking.
-// This used to be 1300ms, which reliably cut people off mid-thought on a
-// normal "let me think for a second" pause and submitted the half-answer as
-// final. Long enough to allow a real thinking pause, short enough that the
-// call doesn't feel stuck after a genuinely finished answer.
-const SILENCE_MS = 2200;
+// Guessing "the candidate is done" purely from a pause length is the wrong
+// primary mechanism for this product: it's built for interview practice,
+// where pausing mid-answer to think is completely normal, not an edge case.
+// No fixed number is right for both someone who talks in bursts with long
+// thinking pauses and someone who's genuinely finished. So it isn't the
+// primary mechanism any more — there's now an explicit "done answering"
+// button (see the JSX below) that ends the turn on request instead of by
+// guesswork. This timer is only the safety net for someone who doesn't
+// notice that button and just stops talking, which is why it's generous
+// rather than tuned to feel snappy.
+const SILENCE_MS = 6000;
 // The gap between the interviewer's audio.onended firing and the room
 // actually going quiet. audio.onended fires the instant the decoded track
 // finishes, but the physical sound doesn't stop at the same millisecond —
@@ -48,6 +53,7 @@ const CALL_COPY: Record<
     inputCanType: string;
     inputWait: string;
     send: string;
+    doneAnswering: string;
     endCallAria: string;
     endCallHint: string;
     networkError: string;
@@ -72,6 +78,7 @@ const CALL_COPY: Record<
     inputCanType: "Напишите ответ вместо голоса...",
     inputWait: "Дождитесь вопроса...",
     send: "Отправить",
+    doneAnswering: "Готово, жду вопрос",
     endCallAria: "Завершить звонок",
     endCallHint: "Завершить",
     networkError: "Не удалось связаться с интервьюером. Проверьте соединение и попробуйте снова.",
@@ -92,6 +99,7 @@ const CALL_COPY: Record<
       "Voice input isn't available in this browser — answer by typing below, or open this page in Chrome.",
     questionLabel: "Question",
     youSpeakLabel: "You're speaking",
+    doneAnswering: "Done, I'm finished",
     inputCanType: "Type your answer instead of speaking...",
     inputWait: "Wait for the question...",
     send: "Send",
@@ -941,6 +949,18 @@ export default function CallScreen({ systemPrompt, lang, onEndCall }: Props) {
               </div>
             )}
           </div>
+        )}
+
+        {/* Explicit end-of-turn control: guessing "done talking" purely from a
+            pause is fundamentally the wrong tool for this product specifically
+            — it's built for people who pause to think, not fluent speakers.
+            The silence timer below still exists as a safety net for anyone who
+            doesn't notice this button, but it's generous now precisely because
+            this button is the expected way to end a turn, not the timer. */}
+        {supported && callState === "listening" && (
+          <button type="button" className={styles.doneBtn} onClick={stopAndProcess}>
+            {T.doneAnswering}
+          </button>
         )}
 
         <form
